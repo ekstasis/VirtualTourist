@@ -12,6 +12,8 @@ import CoreData
 
 class MapViewController: UIViewController, MKMapViewDelegate {
     
+    var count = 0
+    
     @IBOutlet weak var mapView: MKMapView!
     
     lazy var sharedContext: NSManagedObjectContext = {
@@ -30,6 +32,18 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         mapView.addGestureRecognizer(longPressRecognizer)
         
         setInitialLocation()
+        populatePins()
+    }
+    
+    func populatePins() {
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        var pins = [Pin]()
+        do {
+            pins = try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
+        } catch {
+            return
+        }
+        mapView.addAnnotations(pins)
     }
     
     func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
@@ -41,7 +55,34 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
         
         let pin = Pin(location: mapCoordinate, context: sharedContext)
+        CoreDataStackManager.sharedInstance().saveContext()
         mapView.addAnnotation(pin)
+    }
+    
+    
+    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        saveCurrentMapRegion(mapView.region)
+    }
+//    
+//    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+//        
+//        var pinView: MKPinAnnotationView?
+//        
+//        if let pinView = mapView.dequeueReusableAnnotationViewWithIdentifier("Pin") {
+//            pinView.annotation = annotation
+//        } else {
+//            pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
+//        }
+//        
+//        pinView?.canShowCallout = false
+//        return pinView
+//    }
+    
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        print("delect \(count++)")
+       let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+        photosVC.pin = view.annotation as! Pin
+        navigationController?.pushViewController(photosVC, animated: true)
     }
     
     // If first time running app, get user's location, otherwise used saved location
@@ -63,24 +104,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             saveCurrentMapRegion(mapView.region)
         }
     }
-    
-    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        saveCurrentMapRegion(mapView.region)
-    }
-    
-//    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
-//        
-//        var pinView: MKAnnotationView!
-//        
-//        if let pinView = mapView.dequeueReusableAnnotationViewWithIdentifier("Pin") {
-//            pinView.annotation = annotation
-//        } else {
-//            pinView = MKAnnotationView()
-//            pinView.annotation = annotation
-//        }
-//        
-//        return pinView
-//    }
     
     func saveCurrentMapRegion(region: MKCoordinateRegion) {
         let mapCenter = region.center

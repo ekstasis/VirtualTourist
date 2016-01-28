@@ -42,7 +42,7 @@
         <!--Photos View Controller-->
         <scene sceneID="K8O-Wm-NlN">
             <objects>
-                <viewController id="SVS-bl-1wb" customClass="PhotosViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="Photos" id="SVS-bl-1wb" customClass="PhotosViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="z1o-NV-14q"/>
                         <viewControllerLayoutGuide type="bottom" id="jhS-tg-GmG"/>

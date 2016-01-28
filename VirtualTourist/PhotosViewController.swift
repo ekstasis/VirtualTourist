@@ -15,26 +15,17 @@ class PhotosViewController: UIViewController {
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    var pin: Pin!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+        setUpMap()
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    func setUpMap() {
+        let mapCenter = pin.coordinate
+        let span = MKCoordinateSpanMake(3.0, 3.0)
+        mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
+        mapView.addAnnotation(pin)
     }
-    */
-
 }
