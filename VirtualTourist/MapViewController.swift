@@ -22,6 +22,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let client = FlickrClient()
+        client.fetchPhotos()
 
         navigationItem.rightBarButtonItem = editButtonItem()
         
