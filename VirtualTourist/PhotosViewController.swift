@@ -10,16 +10,52 @@ import UIKit
 import MapKit
 import CoreData
 
-class PhotosViewController: UIViewController {
-
+class PhotosViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
+    
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
     
     var pin: Pin!
     
+    var testArray = [UIImage]()
+    
+    var selectedIndexes = [NSIndexPath]()
+    var insertedIndexPaths: [NSIndexPath]!
+    var deletedIndexPaths: [NSIndexPath]!
+    var updatedIndexPaths: [NSIndexPath]!
+    
+    lazy var sharedContext: NSManagedObjectContext = {
+        return CoreDataStackManager.sharedInstance().managedObjectContext
+    }()
+    
+    lazy var fetchedResultsController: NSFetchedResultsController = {
+        let fetchRequest = NSFetchRequest(entityName: "Photo")
+//        let sort = NSSortDescriptor(key: "huh", ascending: true)
+        let predicate = NSPredicate(format: "pin == %@", self.pin)
+        return NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpMap()
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        
+        fillTestArray()
+    }
+    
+    func fillTestArray() {
+        let rect = CGRectMake(0, 0, 1, 1)
+        UIGraphicsBeginImageContext(rect.size)
+        let context = UIGraphicsGetCurrentContext()
+        CGContextSetFillColorWithColor(context, UIColor.redColor().CGColor)
+        CGContextFillRect(context, rect)
+        let img = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        for _ in 1...5 {
+            testArray.append(img)
+        }
     }
     
     func setUpMap() {
@@ -27,5 +63,22 @@ class PhotosViewController: UIViewController {
         let span = MKCoordinateSpanMake(3.0, 3.0)
         mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
         mapView.addAnnotation(pin)
+    }
+    
+    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return testArray.count
+    }
+    
+    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        
+        var cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as? PhotoCollectionViewCell
+        if cell == nil {
+            cell = PhotoCollectionViewCell()
+        }
+        
+        cell!.imageView.image = testArray[indexPath.row]
+        
+        return cell!
+        
     }
 }

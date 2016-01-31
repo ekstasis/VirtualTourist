@@ -61,20 +61,34 @@
                                         <rect key="frame" x="0.0" y="116" width="600" height="464"/>
                                         <color key="backgroundColor" red="0.49288000380000002" green="0.70677432179999999" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="yHS-N9-WaG">
-                                            <size key="itemSize" width="50" height="50"/>
+                                            <size key="itemSize" width="150" height="150"/>
                                             <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                             <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                             <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                         </collectionViewFlowLayout>
                                         <cells>
-                                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="28k-fz-K3V">
-                                                <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
-                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="PhotoCell" id="Kv6-8K-Fdf" customClass="PhotoCollectionViewCell" customModule="VirtualTourist" customModuleProvider="target">
+                                                <rect key="frame" x="0.0" y="0.0" width="150" height="150"/>
+                                                <autoresizingMask key="autoresizingMask"/>
                                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
-                                                    <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="150" height="150"/>
                                                     <autoresizingMask key="autoresizingMask"/>
+                                                    <subviews>
+                                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="rqB-fJ-eo9">
+                                                            <rect key="frame" x="0.0" y="0.0" width="150" height="150"/>
+                                                        </imageView>
+                                                    </subviews>
                                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                                 </view>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" secondItem="rqB-fJ-eo9" secondAttribute="height" id="DjP-2e-AxL"/>
+                                                    <constraint firstAttribute="width" secondItem="rqB-fJ-eo9" secondAttribute="width" id="i3f-FB-yLx"/>
+                                                    <constraint firstItem="rqB-fJ-eo9" firstAttribute="centerY" secondItem="Kv6-8K-Fdf" secondAttribute="centerY" id="x2v-pT-v0r"/>
+                                                    <constraint firstItem="rqB-fJ-eo9" firstAttribute="centerX" secondItem="Kv6-8K-Fdf" secondAttribute="centerX" id="xbO-pK-Hm3"/>
+                                                </constraints>
+                                                <connections>
+                                                    <outlet property="imageView" destination="rqB-fJ-eo9" id="iU8-jk-N16"/>
+                                                </connections>
                                             </collectionViewCell>
                                         </cells>
                                     </collectionView>
