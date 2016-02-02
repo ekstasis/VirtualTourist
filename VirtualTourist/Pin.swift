@@ -19,7 +19,7 @@ class Pin: NSManagedObject, MKAnnotation {
         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
     
-    @NSManaged var photos: [Photo]
+    @NSManaged var photos: [Photo]!
     
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
         super.init(entity: entity, insertIntoManagedObjectContext: context!)

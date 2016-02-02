@@ -6,6 +6,8 @@
 //  Copyright (c) 2015 Udacity. All rights reserved.
 //
 
+// Copied from Udacity examples
+
 import Foundation
 import CoreData
 

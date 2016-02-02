@@ -12,12 +12,14 @@ import CoreData
 
 class MapViewController: UIViewController, MKMapViewDelegate {
     
-    var count = 0
-    
     @IBOutlet weak var mapView: MKMapView!
     
     lazy var sharedContext: NSManagedObjectContext = {
        return CoreDataStackManager.sharedInstance().managedObjectContext
+    }()
+    
+    lazy var CDManager: CoreDataStackManager = {
+        return CoreDataStackManager.sharedInstance()
     }()
     
     override func viewDidLoad() {
@@ -58,7 +60,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
         
         let pin = Pin(location: mapCoordinate, context: sharedContext)
-        CoreDataStackManager.sharedInstance().saveContext()
+        CDManager.saveContext()
         mapView.addAnnotation(pin)
     }
     
@@ -66,25 +68,17 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         saveCurrentMapRegion(mapView.region)
     }
-//    
-//    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
-//        
-//        var pinView: MKPinAnnotationView?
-//        
-//        if let pinView = mapView.dequeueReusableAnnotationViewWithIdentifier("Pin") {
-//            pinView.annotation = annotation
-//        } else {
-//            pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
-//        }
-//        
-//        pinView?.canShowCallout = false
-//        return pinView
-//    }
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        print("delect \(count++)")
-       let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
-        photosVC.pin = view.annotation as! Pin
+        
+        let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+        
+        let pin = view.annotation as! Pin
+        photosVC.pin = pin
+        
+        // Prefetch images
+        FlickrClient.sharedInstance.fetchPhotos()
+        
         navigationController?.pushViewController(photosVC, animated: true)
     }
     

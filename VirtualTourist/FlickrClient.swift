@@ -10,7 +10,9 @@ import Foundation
 
 class FlickrClient {
     
-    let url = "https://api.flickr.com/services/rest/"
+    static let sharedInstance = FlickrClient()
+    
+    let baseURL = "https://api.flickr.com/services/rest/"
     
     let parameters = [
         "method=flickr.photos.getRecent",
@@ -20,9 +22,11 @@ class FlickrClient {
     ]
     
     var requestURL: NSURL {
-        let flickrURL = url
-        let parameterString = parameters.joinWithSeparator("&")
-        let urlString = flickrURL + "?" + parameterString
+        
+        // Move to computer prop?
+        
+        let parameterString = parameters.joinWithSeparator("&") 
+        let urlString = baseURL + "?" + parameterString
         
         print(urlString)
         
@@ -33,7 +37,6 @@ class FlickrClient {
     
     func fetchPhotos() {
         
-        print(requestURL)
         let request = NSMutableURLRequest(URL: requestURL)
         request.HTTPMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Accept")

@@ -10,7 +10,7 @@ import UIKit
 import MapKit
 import CoreData
 
-class PhotosViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
+class PhotosViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
@@ -28,20 +28,30 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         return CoreDataStackManager.sharedInstance().managedObjectContext
     }()
     
-    lazy var fetchedResultsController: NSFetchedResultsController = {
-        let fetchRequest = NSFetchRequest(entityName: "Photo")
+//    lazy var fetchedResultsController: NSFetchedResultsController = {
+//        let fetchRequest = NSFetchRequest(entityName: "Photo")
 //        let sort = NSSortDescriptor(key: "huh", ascending: true)
-        let predicate = NSPredicate(format: "pin == %@", self.pin)
-        return NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
-    }()
+//        let predicate = NSPredicate(format: "pin == %@", self.pin)
+//        return NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+//    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         setUpMap()
+        
         collectionView.dataSource = self
         collectionView.delegate = self
+//        fetchedResultsController.delegate = self
         
         fillTestArray()
+//        
+//        do {
+//          try fetchedResultsController.performFetch()
+//        } catch {
+//            print("performFetch failed")
+//            // present error dialog?
+//        }
     }
     
     func fillTestArray() {
