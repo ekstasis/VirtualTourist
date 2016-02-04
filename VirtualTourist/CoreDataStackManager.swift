@@ -15,13 +15,15 @@ private let SQLITE_FILE_NAME = "virtual_tourist.sqlite"
 
 class CoreDataStackManager {
     
-    class func sharedInstance() -> CoreDataStackManager {
-        struct Static {
-            static let instance = CoreDataStackManager()
-        }
+//    class func sharedInstance() -> CoreDataStackManager {
+//        struct Static {
+//            static let instance = CoreDataStackManager()
+//        }
+//    
+//        return Static.instance
+//    }
     
-        return Static.instance
-    }
+    static let sharedInstance = CoreDataStackManager()
     
     lazy var applicationDocumentsDirectory: NSURL = {
         

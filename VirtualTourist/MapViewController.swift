@@ -14,19 +14,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     
-    lazy var sharedContext: NSManagedObjectContext = {
-       return CoreDataStackManager.sharedInstance().managedObjectContext
-    }()
-    
-    lazy var CDManager: CoreDataStackManager = {
-        return CoreDataStackManager.sharedInstance()
-    }()
+    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
+    let cdManager = CoreDataStackManager.sharedInstance
+    let flickrClient = FlickrClient.sharedInstance
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let client = FlickrClient()
-        client.fetchPhotos()
 
         navigationItem.rightBarButtonItem = editButtonItem()
         
@@ -60,7 +54,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
         
         let pin = Pin(location: mapCoordinate, context: sharedContext)
-        CDManager.saveContext()
+        cdManager.saveContext()
+        
+        flickrClient.fetchPhotoPaths(pin)
+        
         mapView.addAnnotation(pin)
     }
     
@@ -75,9 +72,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         let pin = view.annotation as! Pin
         photosVC.pin = pin
-        
-        // Prefetch images
-        FlickrClient.sharedInstance.fetchPhotos()
         
         navigationController?.pushViewController(photosVC, animated: true)
     }

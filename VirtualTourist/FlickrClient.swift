@@ -14,43 +14,50 @@ class FlickrClient {
     
     let baseURL = "https://api.flickr.com/services/rest/"
     
-    let parameters = [
+    var parameters = [
         "method=flickr.photos.getRecent",
         "api_key=3708e5241ec502d213e35d644fa4a6d8",
         "format=json",
-        "nojsoncallback=1"
+        "nojsoncallback=1",
+        "accuracy=13"
     ]
     
-    var requestURL: NSURL {
-        
-        // Move to computer prop?
-        
-        let parameterString = parameters.joinWithSeparator("&") 
-        let urlString = baseURL + "?" + parameterString
-        
-        print(urlString)
-        
-        return NSURL(string: urlString)!
-    }
+//    var requestURL: NSURL {
+//        
+//        // Move to computer prop?
+//        
+//
+//        print(urlString)
+//        
+//        return NSURL(string: urlString)!
+//    }
     
     let urlSession = NSURLSession.sharedSession()
     
-    func fetchPhotos() {
+    func fetchPhotoPaths(pin: Pin) {
         
-        let request = NSMutableURLRequest(URL: requestURL)
+        parameters.append("lat=\(pin.latitude)")
+        parameters.append("lon=\(pin.longitude)")
+        
+        let urlString = baseURL + "?" + parameters.joinWithSeparator("&")
+        
+        let request = NSMutableURLRequest(URL: NSURL(string: urlString)!)
         request.HTTPMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        makeFlickrRequest(request) { json, errorString in
+        makeFlickrRequest(request) { (json: NSDictionary?, errorString: String?) in
             guard errorString == nil else {
                 print(errorString)
                 return
             }
             
-            print(json)
+//            print(json)
+            downloadPhotos(json!)
         }
     }
+    
+    func downloadPhotos(json: NSDictionary?)
     
     func makeFlickrRequest(request: NSURLRequest, handler: (json: NSDictionary?, errorString: String?) -> Void) {
         

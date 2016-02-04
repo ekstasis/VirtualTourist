@@ -24,9 +24,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     var deletedIndexPaths: [NSIndexPath]!
     var updatedIndexPaths: [NSIndexPath]!
     
-    lazy var sharedContext: NSManagedObjectContext = {
-        return CoreDataStackManager.sharedInstance().managedObjectContext
-    }()
+    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
     
 //    lazy var fetchedResultsController: NSFetchedResultsController = {
 //        let fetchRequest = NSFetchRequest(entityName: "Photo")
