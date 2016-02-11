@@ -17,21 +17,12 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     
     var pin: Pin!
     
-    var testArray = [UIImage]()
-    
-    var selectedIndexes = [NSIndexPath]()
-    var insertedIndexPaths: [NSIndexPath]!
-    var deletedIndexPaths: [NSIndexPath]!
-    var updatedIndexPaths: [NSIndexPath]!
+    //    var selectedIndexes = [NSIndexPath]()
+    //    var insertedIndexPaths: [NSIndexPath]!
+    //    var deletedIndexPaths: [NSIndexPath]!
+    //    var updatedIndexPaths: [NSIndexPath]!
     
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
-    
-//    lazy var fetchedResultsController: NSFetchedResultsController = {
-//        let fetchRequest = NSFetchRequest(entityName: "Photo")
-//        let sort = NSSortDescriptor(key: "huh", ascending: true)
-//        let predicate = NSPredicate(format: "pin == %@", self.pin)
-//        return NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
-//    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,30 +31,31 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         collectionView.dataSource = self
         collectionView.delegate = self
-//        fetchedResultsController.delegate = self
-        
-        fillTestArray()
-//        
-//        do {
-//          try fetchedResultsController.performFetch()
-//        } catch {
-//            print("performFetch failed")
-//            // present error dialog?
-//        }
     }
     
-    func fillTestArray() {
-        let rect = CGRectMake(0, 0, 1, 1)
-        UIGraphicsBeginImageContext(rect.size)
-        let context = UIGraphicsGetCurrentContext()
-        CGContextSetFillColorWithColor(context, UIColor.redColor().CGColor)
-        CGContextFillRect(context, rect)
-        let img = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
         
-        for _ in 1...5 {
-            testArray.append(img)
+        guard pin.photos.isEmpty else {
+            return
         }
+        
+        // in client CH, get photo URLs and create Photos with them
+        FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, errorString in
+            
+            guard errorString == nil else {
+                print(errorString)
+                return
+            }
+            
+            let _ = paths!.map { (path) -> Photo in
+                Photo(filePath: path, pin: self.pin, context: self.sharedContext)
+            }
+            
+            CoreDataStackManager.sharedInstance.saveContext()
+        }
+        
+        // update CV in main thread?
     }
     
     func setUpMap() {
@@ -74,19 +66,35 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     }
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return testArray.count
+        return pin.photos.count
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
-        var cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as? PhotoCollectionViewCell
-        if cell == nil {
-            cell = PhotoCollectionViewCell()
+        let photo = pin.photos[indexPath.row]
+        
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
+        
+        configureCell(cell, photo: photo)
+        
+        return cell
+        
+    }
+    
+    func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
+        
+        let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+        let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path
+        let fileManager = NSFileManager.defaultManager()
+        
+        if let imageData = fileManager.contentsAtPath(filePath!) {
+            // create image, set image on cell, return cell
+            
+        } else {
+            
+            let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { image, errorString in
+                // imagedownload CH
+            }
         }
-        
-        cell!.imageView.image = testArray[indexPath.row]
-        
-        return cell!
-        
     }
 }

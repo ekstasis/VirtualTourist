@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import UIKit
+import CoreData
 
 class FlickrClient {
     
@@ -22,19 +24,13 @@ class FlickrClient {
         "accuracy=13"
     ]
     
-//    var requestURL: NSURL {
-//        
-//        // Move to computer prop?
-//        
-//
-//        print(urlString)
-//        
-//        return NSURL(string: urlString)!
-//    }
-    
     let urlSession = NSURLSession.sharedSession()
     
-    func fetchPhotoPaths(pin: Pin) {
+    lazy var context: NSManagedObjectContext = {
+        CoreDataStackManager.sharedInstance.managedObjectContext
+    }()
+    
+    func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, errorString: String?) -> Void) {
         
         parameters.append("lat=\(pin.latitude)")
         parameters.append("lon=\(pin.longitude)")
@@ -46,39 +42,67 @@ class FlickrClient {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        makeFlickrRequest(request) { (json: NSDictionary?, errorString: String?) in
-            guard errorString == nil else {
-                print(errorString)
-                return
-            }
-            
-//            print(json)
-            downloadPhotos(json!)
-        }
-    }
-    
-    func downloadPhotos(json: NSDictionary?)
-    
-    func makeFlickrRequest(request: NSURLRequest, handler: (json: NSDictionary?, errorString: String?) -> Void) {
-        
         let task = urlSession.dataTaskWithRequest(request) { data, response, error in
-            
             guard error == nil else {
-                handler(json: nil, errorString: error!.localizedDescription)
+                completionHandler(paths: nil, errorString: error!.localizedDescription)
                 return
             }
-            // ANALYZE RESPONSE?
             
-            var json: NSDictionary
+            var json = NSDictionary()
             
             do {
                 json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
-                handler(json: json, errorString: nil)
             } catch let error as NSError {
-                handler(json: nil, errorString: error.localizedDescription)
+                completionHandler(paths: nil, errorString: error.localizedDescription)
             }
+            
+            let photosDict = json["photos"] as! [String : AnyObject]
+            let photoArray = photosDict["photo"] as! [[String: AnyObject]]
+            
+            let paths = photoArray.map { (dict) -> String in
+                let farm = dict["farm"] as! Int
+                let id = dict["id"] as! String
+                let secret = dict["secret"] as! String
+                let server = dict["server"] as! String
+                return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
+            }
+            
+            completionHandler(paths: paths, errorString: nil)
         }
         
         task.resume()
     }
+    
+    func imageDownloadTask(path: String, completionHandler: (image: UIImage?, errorString: String?) -> Void) {
+        
+    }
+    
+    func downloadPhotos(paths: [String]) {
+        let documentsDirectory = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
+        
+    }
+    
+    
+//    func makeFlickrRequest(request: NSURLRequest, handler: (result: NSDictionary?, errorString: String?) -> Void) {
+//        
+//        let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+//            
+//            guard error == nil else {
+//                handler(json: nil, errorString: error!.localizedDescription)
+//                return
+//            }
+//            // ANALYZE RESPONSE?
+//            
+//            var json: NSDictionary
+//            
+//            do {
+//                json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
+//                handler(json: json, errorString: nil)
+//            } catch let error as NSError {
+//                handler(json: nil, errorString: error.localizedDescription)
+//            }
+//        }
+//        
+//        task.resume()
+//    }
 }

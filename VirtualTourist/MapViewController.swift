@@ -20,7 +20,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
 
         navigationItem.rightBarButtonItem = editButtonItem()
         
@@ -56,8 +55,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let pin = Pin(location: mapCoordinate, context: sharedContext)
         cdManager.saveContext()
         
-        flickrClient.fetchPhotoPaths(pin)
-        
         mapView.addAnnotation(pin)
     }
     
@@ -72,6 +69,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         let pin = view.annotation as! Pin
         photosVC.pin = pin
+        
+        print("didSelectAnnotationView")
         
         navigationController?.pushViewController(photosVC, animated: true)
     }
