@@ -73,15 +73,22 @@ class FlickrClient {
         task.resume()
     }
     
-    func imageDownloadTask(path: String, completionHandler: (image: UIImage?, errorString: String?) -> Void) {
+    func imageDownloadTask(path: String, completionHandler: (imageData: NSData?, errorString: String?) -> Void) {
         
-    }
-    
-    func downloadPhotos(paths: [String]) {
-        let documentsDirectory = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
+        let request = NSURLRequest(URL: NSURL(string: path)!)
         
+        let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+            
+            guard error == nil else {
+                completionHandler(imageData: nil, errorString: error!.localizedDescription)
+                return
+            }
+            
+            completionHandler(imageData: data, errorString: nil)
+        }
+        
+        task.resume()
     }
-    
     
 //    func makeFlickrRequest(request: NSURLRequest, handler: (result: NSDictionary?, errorString: String?) -> Void) {
 //        

@@ -13,8 +13,7 @@ class Photo: NSManagedObject {
     
     @NSManaged var pin: Pin
     @NSManaged var filePath: String
-    
-    var fileName: String!
+    @NSManaged var fileName: String
     
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
@@ -26,8 +25,7 @@ class Photo: NSManagedObject {
         self.filePath = filePath
         self.pin = pin
         
-        let url = NSURL(string: filePath)
-        fileName = url!.lastPathComponent
-        print(fileName)
+        let url = NSURL(string: filePath)!
+        fileName = url.lastPathComponent!
     }
 }

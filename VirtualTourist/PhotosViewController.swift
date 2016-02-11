@@ -37,6 +37,8 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         super.viewWillAppear(animated)
         
         guard pin.photos.isEmpty else {
+            print("pin.photos.is NOT empty")
+            print(pin.photos[0].fileName)
             return
         }
         
@@ -53,9 +55,12 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             }
             
             CoreDataStackManager.sharedInstance.saveContext()
+            
+        dispatch_async(dispatch_get_main_queue()) {
+            self.collectionView.reloadData()
+        }
         }
         
-        // update CV in main thread?
     }
     
     func setUpMap() {
@@ -84,16 +89,23 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
         
         let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
-        let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path
+        let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
         let fileManager = NSFileManager.defaultManager()
         
-        if let imageData = fileManager.contentsAtPath(filePath!) {
+//        print(fileManager.contentsAtPath(filePath))
+        
+        if let imageData = fileManager.contentsAtPath(filePath) {
             // create image, set image on cell, return cell
+            cell.imageView.image = UIImage(data: imageData)
             
         } else {
+            print("***   File needs to be downloaded and saved * * * ")
             
-            let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { image, errorString in
-                // imagedownload CH
+            let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
+                // Save Image
+                let image = UIImage(data: imageData!)!
+                let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
+                imageToBeSaved.writeToFile(filePath, atomically: true)
             }
         }
     }
