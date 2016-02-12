@@ -73,7 +73,7 @@ class FlickrClient {
         task.resume()
     }
     
-    func imageDownloadTask(path: String, completionHandler: (imageData: NSData?, errorString: String?) -> Void) {
+    func imageDownloadTask(path: String, completionHandler: (imageData: NSData?, errorString: String?) -> Void) -> NSURLSessionDataTask {
         
         let request = NSURLRequest(URL: NSURL(string: path)!)
         
@@ -88,6 +88,7 @@ class FlickrClient {
         }
         
         task.resume()
+        return task
     }
     
 //    func makeFlickrRequest(request: NSURLRequest, handler: (result: NSDictionary?, errorString: String?) -> Void) {

@@ -9,6 +9,7 @@
 import UIKit
 import MapKit
 import CoreData
+import Foundation
 
 class PhotosViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
     
@@ -100,13 +101,27 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             
         } else {
             print("***   File needs to be downloaded and saved * * * ")
+            cell.activityIndicator.startAnimating()
             
             let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
                 // Save Image
+                
+                guard errorString == nil else {
+                    print(errorString)
+                    return
+                }
                 let image = UIImage(data: imageData!)!
+                
+                dispatch_async(dispatch_get_main_queue()) {
+                    cell.activityIndicator.stopAnimating()
+                    cell.imageView.image = image
+                }
+                
                 let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
                 imageToBeSaved.writeToFile(filePath, atomically: true)
             }
+            
+            cell.taskToCancelifCellIsReused = imageTask
         }
     }
 }
