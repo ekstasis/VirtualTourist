@@ -28,4 +28,20 @@ class Photo: NSManagedObject {
         let url = NSURL(string: filePath)!
         fileName = url.lastPathComponent!
     }
+    
+    deinit {
+        let fileManager = NSFileManager.defaultManager()
+        let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+        let fileToDelete = directory.URLByAppendingPathComponent(fileName)
+        
+        print("deinit: \(fileName)")
+        print(filePath)
+        
+        do {
+            try fileManager.removeItemAtURL(fileToDelete)
+            print("trying to delete")
+        } catch let error as NSError {
+            print(error.localizedDescription)
+        }
+    }
 }

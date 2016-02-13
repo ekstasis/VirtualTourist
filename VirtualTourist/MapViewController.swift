@@ -65,9 +65,21 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
         
-        let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+        mapView.deselectAnnotation(view.annotation, animated: true)
         
         let pin = view.annotation as! Pin
+        
+        guard editing == false else {
+            // remove from annotations
+            mapView.removeAnnotation(pin)
+            // remove from context
+            sharedContext.deleteObject(pin)
+            cdManager.saveContext()
+            return
+        }
+        
+        let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+        
         photosVC.pin = pin
         
         print("didSelectAnnotationView")
@@ -75,6 +87,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         navigationController?.pushViewController(photosVC, animated: true)
     }
     
+    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+        let annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
+        annotationView.canShowCallout = false
+        
+        return annotationView
+    }
+
     // If first time running app, get user's location, otherwise used saved location
     func setInitialLocation() {
         
@@ -112,15 +131,15 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
     }
     
-    override func setEditing(editing: Bool, animated: Bool) {
-        super.setEditing(editing, animated: animated)
-        
-        if editing {
-            print("if editing")
-        } else {
-            print("not editing")
-        }
-    }
+//    override func setEditing(editing: Bool, animated: Bool) {
+//        super.setEditing(editing, animated: animated)
+//        
+//        if editing {
+//            print("if editing")
+//        } else {
+//            print("not editing")
+//        }
+//    }
     
 
 }

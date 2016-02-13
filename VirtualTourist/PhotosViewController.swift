@@ -38,8 +38,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         super.viewWillAppear(animated)
         
         guard pin.photos.isEmpty else {
-            print("pin.photos.is NOT empty")
-            print(pin.photos[0].fileName)
             return
         }
         
@@ -100,7 +98,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             cell.imageView.image = UIImage(data: imageData)
             
         } else {
-            print("***   File needs to be downloaded and saved * * * ")
+            
             cell.activityIndicator.startAnimating()
             
             let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
