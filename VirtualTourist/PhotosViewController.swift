@@ -17,12 +17,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     @IBOutlet weak var collectionView: UICollectionView!
     
     var pin: Pin!
-    
-    //    var selectedIndexes = [NSIndexPath]()
-    //    var insertedIndexPaths: [NSIndexPath]!
-    //    var deletedIndexPaths: [NSIndexPath]!
-    //    var updatedIndexPaths: [NSIndexPath]!
-    
+    var cellsToBeDeleted = [PhotoCollectionViewCell]()
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
     
     override func viewDidLoad() {
@@ -69,22 +64,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         mapView.addAnnotation(pin)
     }
     
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return pin.photos.count
-    }
-    
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        
-        let photo = pin.photos[indexPath.row]
-        
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
-        
-        configureCell(cell, photo: photo)
-        
-        return cell
-        
-    }
-    
     func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
         
         let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
@@ -121,4 +100,29 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             cell.taskToCancelifCellIsReused = imageTask
         }
     }
+    
+    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return pin.photos.count
+    }
+    
+    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        
+        let photo = pin.photos[indexPath.row]
+        
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
+        
+        configureCell(cell, photo: photo)
+        
+        return cell
+        
+    }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+        
+        cell.imageView.alpha = 0.3
+        cellsToBeDeleted.append(cell)
+        
+    }
+   
 }
