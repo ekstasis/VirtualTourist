@@ -15,10 +15,11 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var editButton: UIButton!
     
     var pin: Pin!
-    var cellsToBeDeleted = [PhotoCollectionViewCell]()
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
+    var editMode = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,11 +33,21 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
+        collectionView.allowsMultipleSelection = true
+        
+        editButton.setTitle("New Collection", forState: .Normal)
+        
         guard pin.photos.isEmpty else {
             return
         }
         
-        // in client CH, get photo URLs and create Photos with them
+        getNewPhotos()
+    }
+    
+    func getNewPhotos() {
+        
+        editButton.enabled = false
+        
         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, errorString in
             
             guard errorString == nil else {
@@ -51,10 +62,10 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             CoreDataStackManager.sharedInstance.saveContext()
             
             dispatch_async(dispatch_get_main_queue()) {
+                self.editButton.enabled = true
                 self.collectionView.reloadData()
             }
         }
-        
     }
     
     func setUpMap() {
@@ -62,6 +73,33 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         let span = MKCoordinateSpanMake(3.0, 3.0)
         mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
         mapView.addAnnotation(pin)
+    }
+    
+    @IBAction func removeOrRefreshButton(sender: AnyObject) {
+        
+        if editMode {
+            ///////// handle optional?
+            let indexesForDeletion = collectionView.indexPathsForSelectedItems()!
+            for index in indexesForDeletion {
+                sharedContext.deleteObject(pin.photos[index.item])
+                let cell = collectionView.cellForItemAtIndexPath(index) as! PhotoCollectionViewCell
+                cell.imageView.alpha = 1.0
+            }
+            
+            CoreDataStackManager.sharedInstance.saveContext()
+            collectionView.deleteItemsAtIndexPaths(indexesForDeletion)
+            
+            editMode = false
+            editButton.setTitle("New Collection", forState: .Normal)
+            
+        } else {
+            for photo in pin.photos {
+                sharedContext.deleteObject(photo)
+            }
+            CoreDataStackManager.sharedInstance.saveContext()
+            getNewPhotos()
+        }
+        
     }
     
     func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
@@ -94,7 +132,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 
                 let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
                 imageToBeSaved.writeToFile(filePath, atomically: true)
-                print("writeToFile \(filePath)")
             }
             
             cell.taskToCancelifCellIsReused = imageTask
@@ -107,7 +144,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
-        let photo = pin.photos[indexPath.row]
+        let photo = pin.photos[indexPath.item]
         
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
         
@@ -118,11 +155,26 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        
+        print("select")
+        
+        editMode = true
+        editButton.setTitle("Remove Photos", forState: .Normal)
+        
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
         
         cell.imageView.alpha = 0.3
-        cellsToBeDeleted.append(cell)
+    }
+    
+    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
+        print("deselect")
+        let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+        cell.imageView.alpha = 1.0
         
+        if collectionView.indexPathsForSelectedItems()!.isEmpty {
+            editMode = false
+            editButton.setTitle("New Collection", forState: .Normal)
+        }
     }
    
 }

@@ -67,7 +67,8 @@ class FlickrClient {
                 return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
             }
             
-            completionHandler(paths: paths, errorString: nil)
+            completionHandler(paths: Array(paths[0...5]), errorString: nil)
+//            completionHandler(paths: paths, errorString: nil)
         }
         
         task.resume()

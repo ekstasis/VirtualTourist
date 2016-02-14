@@ -131,15 +131,4 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
     }
     
-//    override func setEditing(editing: Bool, animated: Bool) {
-//        super.setEditing(editing, animated: animated)
-//        
-//        if editing {
-//            print("if editing")
-//        } else {
-//            print("not editing")
-//        }
-//    }
-    
-
 }

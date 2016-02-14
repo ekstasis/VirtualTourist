@@ -114,6 +114,9 @@
                                                 <exclude reference="Ja4-vj-wqp"/>
                                             </mask>
                                         </variation>
+                                        <connections>
+                                            <action selector="removeOrRefreshButton:" destination="SVS-bl-1wb" eventType="touchUpInside" id="Je6-XW-aej"/>
+                                        </connections>
                                     </button>
                                 </subviews>
                                 <constraints>
@@ -145,6 +148,7 @@
                     </view>
                     <connections>
                         <outlet property="collectionView" destination="Ddz-q3-3VU" id="Rlg-lg-jxz"/>
+                        <outlet property="editButton" destination="sEa-Gs-uHd" id="w7t-RK-Dd8"/>
                         <outlet property="mapView" destination="DAV-Or-dlP" id="OvN-YK-dYP"/>
                     </connections>
                 </viewController>

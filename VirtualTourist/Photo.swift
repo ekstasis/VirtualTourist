@@ -37,7 +37,9 @@ class Photo: NSManagedObject {
         
         do {
             try fileManager.removeItemAtURL(fileToDelete)
+            print(fileName)
         } catch {
+            print("file not there")
             // Photo never downloaded and saved due to (lack of) CollectionView scrolling.  No problem.
         }
     }
