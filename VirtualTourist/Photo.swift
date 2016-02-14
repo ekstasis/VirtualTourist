@@ -29,19 +29,16 @@ class Photo: NSManagedObject {
         fileName = url.lastPathComponent!
     }
     
-    deinit {
+    override func prepareForDeletion() {
+        
         let fileManager = NSFileManager.defaultManager()
         let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
         let fileToDelete = directory.URLByAppendingPathComponent(fileName)
         
-        print("deinit: \(fileName)")
-        print(filePath)
-        
         do {
             try fileManager.removeItemAtURL(fileToDelete)
-            print("trying to delete")
-        } catch let error as NSError {
-            print(error.localizedDescription)
+        } catch {
+            // Photo never downloaded and saved due to (lack of) CollectionView scrolling.  No problem.
         }
     }
 }

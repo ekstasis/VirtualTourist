@@ -55,9 +55,9 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             
             CoreDataStackManager.sharedInstance.saveContext()
             
-        dispatch_async(dispatch_get_main_queue()) {
-            self.collectionView.reloadData()
-        }
+            dispatch_async(dispatch_get_main_queue()) {
+                self.collectionView.reloadData()
+            }
         }
         
     }
@@ -91,8 +91,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
         let fileManager = NSFileManager.defaultManager()
         
-//        print(fileManager.contentsAtPath(filePath))
-        
         if let imageData = fileManager.contentsAtPath(filePath) {
             // create image, set image on cell, return cell
             cell.imageView.image = UIImage(data: imageData)
@@ -117,6 +115,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 
                 let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
                 imageToBeSaved.writeToFile(filePath, atomically: true)
+                print("writeToFile \(filePath)")
             }
             
             cell.taskToCancelifCellIsReused = imageTask
