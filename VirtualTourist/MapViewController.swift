@@ -82,7 +82,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         photosVC.pin = pin
         
-        print("didSelectAnnotationView")
         
         navigationController?.pushViewController(photosVC, animated: true)
     }
@@ -90,8 +89,23 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
         let annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
         annotationView.canShowCallout = false
+        annotationView.draggable = true
         
         return annotationView
+    }
+    
+    func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, didChangeDragState newState: MKAnnotationViewDragState, fromOldState oldState: MKAnnotationViewDragState) {
+        switch newState {
+        case .Starting:
+            print(".Starting")
+            view.setDragState(.Dragging, animated: true)
+        case .Ending, .Canceling:
+            print(".Ending/.Canceling")
+            view.setDragState(.None, animated: true)
+        default:
+            print(newState)
+            break
+        }
     }
 
     // If first time running app, get user's location, otherwise used saved location

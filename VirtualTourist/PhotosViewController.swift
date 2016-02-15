@@ -17,6 +17,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var editButton: UIButton!
     
+    var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
     var pin: Pin!
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
     var editMode = false
@@ -28,6 +29,8 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         collectionView.dataSource = self
         collectionView.delegate = self
+        
+        activityIndicator.backgroundColor = UIColor.redColor()
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -41,12 +44,25 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             return
         }
         
+//        let frame = CGRect(x: 0, y: 110, width: 320, height: 440)
+//        activityIndicator.frame = frame
+        
+        activityIndicator.frame = collectionView.frame
+        print(collectionView.frame)
+        print(collectionView.bounds)
+        print(view.frame)
+        print(view.bounds)
+        print(activityIndicator.frame)
+        
         getNewPhotos()
     }
     
     func getNewPhotos() {
         
         editButton.enabled = false
+        
+        view.addSubview(activityIndicator)
+        activityIndicator.startAnimating()
         
         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, errorString in
             
@@ -55,6 +71,8 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 return
             }
             
+            print("fetched paths")
+            
             let _ = paths!.map { (path) -> Photo in
                 Photo(filePath: path, pin: self.pin, context: self.sharedContext)
             }
@@ -62,6 +80,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             CoreDataStackManager.sharedInstance.saveContext()
             
             dispatch_async(dispatch_get_main_queue()) {
+                self.activityIndicator.stopAnimating()
                 self.editButton.enabled = true
                 self.collectionView.reloadData()
             }
