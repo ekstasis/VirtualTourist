@@ -13,18 +13,18 @@ import CoreData
 class FlickrClient {
     
     static let sharedInstance = FlickrClient()
+    let urlSession = NSURLSession.sharedSession()
     
     let baseURL = "https://api.flickr.com/services/rest/"
     
     var parameters = [
-        "method=flickr.photos.getRecent",
+        "method=flickr.photos.search",
         "api_key=3708e5241ec502d213e35d644fa4a6d8",
         "format=json",
         "nojsoncallback=1",
-        "accuracy=13"
+        "accuracy=14",
+        "has_geo=1"
     ]
-    
-    let urlSession = NSURLSession.sharedSession()
     
     lazy var context: NSManagedObjectContext = {
         CoreDataStackManager.sharedInstance.managedObjectContext
@@ -35,14 +35,13 @@ class FlickrClient {
         parameters.append("lat=\(pin.latitude)")
         parameters.append("lon=\(pin.longitude)")
         
+        // API arguments from parameters property above
         let urlString = baseURL + "?" + parameters.joinWithSeparator("&")
         
         let request = NSMutableURLRequest(URL: NSURL(string: urlString)!)
-        request.HTTPMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+            
             guard error == nil else {
                 completionHandler(paths: nil, errorString: error!.localizedDescription)
                 return
@@ -59,6 +58,7 @@ class FlickrClient {
             let photosDict = json["photos"] as! [String : AnyObject]
             let photoArray = photosDict["photo"] as! [[String: AnyObject]]
             
+            // Generate flickr photo URLs from API JSON
             let paths = photoArray.map { (dict) -> String in
                 let farm = dict["farm"] as! Int
                 let id = dict["id"] as! String
@@ -67,8 +67,7 @@ class FlickrClient {
                 return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
             }
             
-            completionHandler(paths: Array(paths[0...5]), errorString: nil)
-//            completionHandler(paths: paths, errorString: nil)
+            completionHandler(paths: paths, errorString: nil)
         }
         
         task.resume()
@@ -91,27 +90,4 @@ class FlickrClient {
         task.resume()
         return task
     }
-    
-//    func makeFlickrRequest(request: NSURLRequest, handler: (result: NSDictionary?, errorString: String?) -> Void) {
-//        
-//        let task = urlSession.dataTaskWithRequest(request) { data, response, error in
-//            
-//            guard error == nil else {
-//                handler(json: nil, errorString: error!.localizedDescription)
-//                return
-//            }
-//            // ANALYZE RESPONSE?
-//            
-//            var json: NSDictionary
-//            
-//            do {
-//                json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
-//                handler(json: json, errorString: nil)
-//            } catch let error as NSError {
-//                handler(json: nil, errorString: error.localizedDescription)
-//            }
-//        }
-//        
-//        task.resume()
-//    }
 }

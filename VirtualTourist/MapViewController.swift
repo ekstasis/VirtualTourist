@@ -16,7 +16,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
     let cdManager = CoreDataStackManager.sharedInstance
-    let flickrClient = FlickrClient.sharedInstance
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,82 +32,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         populatePins()
     }
     
-    func populatePins() {
-        let fetchRequest = NSFetchRequest(entityName: "Pin")
-        var pins = [Pin]()
-        do {
-            pins = try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
-        } catch {
-            return
-        }
-        mapView.addAnnotations(pins)
-    }
-    
-    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
-        guard longPressRecognizer.state == .Began else {
-            return
-        }
-        
-        let tapLocation = longPressRecognizer.locationInView(mapView)
-        let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
-        
-        let pin = Pin(location: mapCoordinate, context: sharedContext)
-        cdManager.saveContext()
-        
-        mapView.addAnnotation(pin)
-    }
-    
-    
-    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        saveCurrentMapRegion(mapView.region)
-    }
-    
-    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        
-        mapView.deselectAnnotation(view.annotation, animated: true)
-        
-        let pin = view.annotation as! Pin
-        
-        guard editing == false else {
-            // remove from annotations
-            mapView.removeAnnotation(pin)
-            // remove from context
-            sharedContext.deleteObject(pin)
-            cdManager.saveContext()
-            return
-        }
-        
-        let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
-        
-        photosVC.pin = pin
-        
-        
-        navigationController?.pushViewController(photosVC, animated: true)
-    }
-    
-    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
-        let annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
-        annotationView.canShowCallout = false
-        annotationView.draggable = true
-        
-        return annotationView
-    }
-    
-    func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, didChangeDragState newState: MKAnnotationViewDragState, fromOldState oldState: MKAnnotationViewDragState) {
-        switch newState {
-        case .Starting:
-            print(".Starting")
-            view.setDragState(.Dragging, animated: true)
-        case .Ending, .Canceling:
-            print(".Ending/.Canceling")
-            view.setDragState(.None, animated: true)
-        default:
-            print(newState)
-            break
-        }
-    }
-
-    // If first time running app, get user's location, otherwise used saved location
+    // Retrieve persisted map center and zoom
     func setInitialLocation() {
         
         let defaults = NSUserDefaults.standardUserDefaults()
@@ -123,12 +47,92 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             
             mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
             
-        } else {  // Save the maps default initial region (from iPhone international settings)
+        } else {
+            // Save the map's default initial region (from iPhone international settings)
             saveCurrentMapRegion(mapView.region)
         }
     }
     
+    // Fetch pins from Core Data
+    func populatePins() {
+        
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        var pins = [Pin]()
+        
+        do {
+            pins = try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
+        } catch {
+            return
+        }
+        
+        mapView.addAnnotations(pins)
+    }
+    
+    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
+        
+        guard longPressRecognizer.state == .Began else {
+            return
+        }
+        
+        let tapLocation = longPressRecognizer.locationInView(mapView)
+        let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
+        let pin = Pin(location: mapCoordinate, context: sharedContext)
+        
+        cdManager.saveContext()
+        
+        mapView.addAnnotation(pin)
+    }
+    
+    // Continually persist map center
+    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        saveCurrentMapRegion(mapView.region)
+    }
+    
+    // Handles pin deletion and transition to photo album depending on whether editing or not
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        
+        mapView.deselectAnnotation(view.annotation, animated: true)
+        
+        let pin = view.annotation as! Pin
+        
+        if editing {
+            
+            // remove from annotations
+            mapView.removeAnnotation(pin)
+            
+            // remove from context
+            sharedContext.deleteObject(pin)
+            cdManager.saveContext()
+            
+            return
+            
+        } else {
+            
+            // Present photo collection
+            let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+            photosVC.pin = pin
+            navigationController?.pushViewController(photosVC, animated: true)
+        }
+    }
+    
+    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+        
+        let annotationView: MKAnnotationView
+        
+        if let view = mapView.dequeueReusableAnnotationViewWithIdentifier("Pin") {
+            annotationView = view
+        } else {
+            annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
+        }
+        
+        annotationView.canShowCallout = false
+        
+        return annotationView
+    }
+    
+    // Persist map zoom and center
     func saveCurrentMapRegion(region: MKCoordinateRegion) {
+        
         let mapCenter = region.center
         let span = region.span
         let defaults = NSUserDefaults.standardUserDefaults()

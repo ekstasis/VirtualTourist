@@ -25,8 +25,10 @@ class Pin: NSManagedObject, MKAnnotation {
     }
     
     init(location: CLLocationCoordinate2D, context: NSManagedObjectContext) {
+        
         let entity = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)
         super.init(entity: entity!, insertIntoManagedObjectContext: context)
+        
         latitude = location.latitude
         longitude = location.longitude
     }

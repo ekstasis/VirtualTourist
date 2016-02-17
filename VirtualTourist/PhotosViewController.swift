@@ -13,14 +13,25 @@ import Foundation
 
 class PhotosViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
     
+    @IBOutlet weak var stackView: UIStackView!
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var editButton: UIButton!
     
     var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
-    var pin: Pin!
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
+    
     var editMode = false
+    var pin: Pin!
+    
+    // placement of waiting indicator should cover the collection view in the stackView
+    var indicatorFrame: CGRect {
+        
+        var indicatorFrame = stackView.arrangedSubviews[1].frame
+        indicatorFrame.origin.y += stackView.frame.origin.y
+        
+        return indicatorFrame
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,8 +40,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         collectionView.dataSource = self
         collectionView.delegate = self
-        
-        activityIndicator.backgroundColor = UIColor.redColor()
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -40,27 +49,23 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         editButton.setTitle("New Collection", forState: .Normal)
         
-        guard pin.photos.isEmpty else {
+        if pin.photos.isEmpty {
+            getNewPhotos()
+        } else {
             return
         }
-        
-//        let frame = CGRect(x: 0, y: 110, width: 320, height: 440)
-//        activityIndicator.frame = frame
-        
-        activityIndicator.frame = collectionView.frame
-        print(collectionView.frame)
-        print(collectionView.bounds)
-        print(view.frame)
-        print(view.bounds)
-        print(activityIndicator.frame)
-        
-        getNewPhotos()
+    }
+    
+    // For device rotation
+    override func viewDidLayoutSubviews() {
+        activityIndicator.frame = indicatorFrame
     }
     
     func getNewPhotos() {
         
         editButton.enabled = false
         
+        activityIndicator.frame = indicatorFrame
         view.addSubview(activityIndicator)
         activityIndicator.startAnimating()
         
@@ -71,8 +76,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 return
             }
             
-            print("fetched paths")
-            
+            // Create Photos from flickr API JSON results
             let _ = paths!.map { (path) -> Photo in
                 Photo(filePath: path, pin: self.pin, context: self.sharedContext)
             }
@@ -175,8 +179,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         
-        print("select")
-        
         editMode = true
         editButton.setTitle("Remove Photos", forState: .Normal)
         
@@ -186,7 +188,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     }
     
     func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
-        print("deselect")
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
         cell.imageView.alpha = 1.0
         

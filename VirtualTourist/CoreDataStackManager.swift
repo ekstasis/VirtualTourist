@@ -6,22 +6,17 @@
 //  Copyright (c) 2015 Udacity. All rights reserved.
 //
 
-// Copied from Udacity examples
 
 import Foundation
 import CoreData
 
 private let SQLITE_FILE_NAME = "virtual_tourist.sqlite"
 
+/*
+*  Copied from Udacity examples
+*/
+
 class CoreDataStackManager {
-    
-//    class func sharedInstance() -> CoreDataStackManager {
-//        struct Static {
-//            static let instance = CoreDataStackManager()
-//        }
-//    
-//        return Static.instance
-//    }
     
     static let sharedInstance = CoreDataStackManager()
     

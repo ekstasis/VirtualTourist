@@ -22,6 +22,7 @@ class Photo: NSManagedObject {
     init(filePath: String, pin: Pin, context: NSManagedObjectContext) {
         let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)
         super.init(entity: entity!, insertIntoManagedObjectContext: context)
+        
         self.filePath = filePath
         self.pin = pin
         
