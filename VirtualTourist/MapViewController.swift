@@ -30,6 +30,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         setInitialLocation()
         populatePins()
+        
     }
     
     // Retrieve persisted map center and zoom
@@ -78,7 +79,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
         let pin = Pin(location: mapCoordinate, context: sharedContext)
         
-        cdManager.saveContext()
+        cdManager.saveContext(sharedContext)
         
         mapView.addAnnotation(pin)
     }
@@ -102,7 +103,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             
             // remove from context
             sharedContext.deleteObject(pin)
-            cdManager.saveContext()
+            cdManager.saveContext(sharedContext)
             
             return
             

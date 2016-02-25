@@ -26,10 +26,6 @@ class FlickrClient {
         "has_geo=1"
     ]
     
-    lazy var context: NSManagedObjectContext = {
-        CoreDataStackManager.sharedInstance.managedObjectContext
-    }()
-    
     func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, errorString: String?) -> Void) {
         
         parameters.append("lat=\(pin.latitude)")

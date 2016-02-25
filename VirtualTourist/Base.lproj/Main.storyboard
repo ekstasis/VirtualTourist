@@ -148,8 +148,8 @@
                     </view>
                     <connections>
                         <outlet property="collectionView" destination="Ddz-q3-3VU" id="Rlg-lg-jxz"/>
-                        <outlet property="editButton" destination="sEa-Gs-uHd" id="w7t-RK-Dd8"/>
                         <outlet property="mapView" destination="DAV-Or-dlP" id="OvN-YK-dYP"/>
+                        <outlet property="removeRefreshButton" destination="sEa-Gs-uHd" id="xKh-6c-qXG"/>
                         <outlet property="stackView" destination="J9k-XW-D5a" id="IaK-in-JwW"/>
                     </connections>
                 </viewController>

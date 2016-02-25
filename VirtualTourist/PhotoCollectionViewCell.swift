@@ -15,7 +15,6 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     
     // Cancel photo download if cell is reused
     var taskToCancelifCellIsReused: NSURLSessionTask? {
-        
         didSet {
             if let taskToCancel = oldValue {
                 taskToCancel.cancel()

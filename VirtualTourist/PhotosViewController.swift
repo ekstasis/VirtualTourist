@@ -16,21 +16,21 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     @IBOutlet weak var stackView: UIStackView!
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var editButton: UIButton!
+    @IBOutlet weak var removeRefreshButton: UIButton!
     
     var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
     
-    var editMode = false
+    var removeMode = false
     var pin: Pin!
     
     // placement of waiting indicator should cover the collection view in the stackView
-    var indicatorFrame: CGRect {
+    var activityIndicatorFrame: CGRect {
         
-        var indicatorFrame = stackView.arrangedSubviews[1].frame
-        indicatorFrame.origin.y += stackView.frame.origin.y
+        var frame = stackView.arrangedSubviews[1].frame
+        frame.origin.y += stackView.frame.origin.y
         
-        return indicatorFrame
+        return frame
     }
     
     override func viewDidLoad() {
@@ -40,52 +40,60 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         collectionView.dataSource = self
         collectionView.delegate = self
+        
+        collectionView.allowsMultipleSelection = true
+        removeRefreshButton.setTitle("New Collection", forState: .Normal)
+        
+        activityIndicator.color = UIColor.blackColor()
     }
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-        collectionView.allowsMultipleSelection = true
-        
-        editButton.setTitle("New Collection", forState: .Normal)
-        
         if pin.photos.isEmpty {
             getNewPhotos()
-        } else {
-            return
         }
     }
     
     // For device rotation
     override func viewDidLayoutSubviews() {
-        activityIndicator.frame = indicatorFrame
+        activityIndicator.frame = activityIndicatorFrame
     }
     
     func getNewPhotos() {
         
-        editButton.enabled = false
+        removeRefreshButton.enabled = false
         
-        activityIndicator.frame = indicatorFrame
+        activityIndicator.frame = activityIndicatorFrame
         view.addSubview(activityIndicator)
         activityIndicator.startAnimating()
         
         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, errorString in
             
             guard errorString == nil else {
-                print(errorString)
+                if errorString == "cancelled" {  // we will get this error frequently during cell reuse
+                    return
+                } else {
+                    self.showAlert(errorString!)
+                }
                 return
             }
             
             // Create Photos from flickr API JSON results
-            let _ = paths!.map { (path) -> Photo in
-                Photo(filePath: path, pin: self.pin, context: self.sharedContext)
-            }
             
-            CoreDataStackManager.sharedInstance.saveContext()
+            let privateMOC = CoreDataStackManager.sharedInstance.newPrivateQueueContext()
+            
+            privateMOC.performBlock {
+                let _ = paths!.map { (path) -> Photo in
+                    Photo(filePath: path, pin: self.pin, context: privateMOC)
+                }
+                
+                CoreDataStackManager.sharedInstance.saveContext(privateMOC)
+            }
             
             dispatch_async(dispatch_get_main_queue()) {
                 self.activityIndicator.stopAnimating()
-                self.editButton.enabled = true
+                self.removeRefreshButton.enabled = true
                 self.collectionView.reloadData()
             }
         }
@@ -100,8 +108,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     
     @IBAction func removeOrRefreshButton(sender: AnyObject) {
         
-        if editMode {
-            ///////// handle optional?
+        if removeMode {
             let indexesForDeletion = collectionView.indexPathsForSelectedItems()!
             for index in indexesForDeletion {
                 sharedContext.deleteObject(pin.photos[index.item])
@@ -109,20 +116,22 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 cell.imageView.alpha = 1.0
             }
             
-            CoreDataStackManager.sharedInstance.saveContext()
+            CoreDataStackManager.sharedInstance.saveContext(sharedContext)
             collectionView.deleteItemsAtIndexPaths(indexesForDeletion)
             
-            editMode = false
-            editButton.setTitle("New Collection", forState: .Normal)
+            removeMode = false
+            removeRefreshButton.setTitle("New Collection", forState: .Normal)
             
         } else {
+            
+            // Delete all photos and get new ones
             for photo in pin.photos {
                 sharedContext.deleteObject(photo)
             }
-            CoreDataStackManager.sharedInstance.saveContext()
+            CoreDataStackManager.sharedInstance.saveContext(sharedContext)
+            
             getNewPhotos()
         }
-        
     }
     
     func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
@@ -131,21 +140,27 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
         let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
         let fileManager = NSFileManager.defaultManager()
         
+        // Image already downloaded
         if let imageData = fileManager.contentsAtPath(filePath) {
-            // create image, set image on cell, return cell
             cell.imageView.image = UIImage(data: imageData)
             
-        } else {
+        } else {  // Download image
             
             cell.activityIndicator.startAnimating()
             
             let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
-                // Save Image
                 
                 guard errorString == nil else {
-                    print(errorString)
+                    
+                    if errorString == "cancelled" {  // we will get this error frequently during cell reuse
+                        return
+                    } else {
+                        self.showAlert(errorString!)
+                    }
+                    
                     return
                 }
+                
                 let image = UIImage(data: imageData!)!
                 
                 dispatch_async(dispatch_get_main_queue()) {
@@ -157,6 +172,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 imageToBeSaved.writeToFile(filePath, atomically: true)
             }
             
+            // This task should be cancelled if this cell is reused
             cell.taskToCancelifCellIsReused = imageTask
         }
     }
@@ -168,19 +184,17 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
         let photo = pin.photos[indexPath.item]
-        
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
         
         configureCell(cell, photo: photo)
         
         return cell
-        
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         
-        editMode = true
-        editButton.setTitle("Remove Photos", forState: .Normal)
+        removeMode = true
+        removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
         
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
         
@@ -188,13 +202,27 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
     }
     
     func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
+        
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
         cell.imageView.alpha = 1.0
         
+        // If this was the last cell to be deselected, get out of remove mode
         if collectionView.indexPathsForSelectedItems()!.isEmpty {
-            editMode = false
-            editButton.setTitle("New Collection", forState: .Normal)
+            removeMode = false
+            removeRefreshButton.setTitle("New Collection", forState: .Normal)
         }
     }
    
+    func showAlert(errorString: String) {
+        
+        let alertController = UIAlertController(title: "Alert", message: errorString, preferredStyle: .Alert)
+        let action = UIAlertAction(title: "OK", style: .Default, handler: nil)
+        alertController.addAction(action)
+        
+        dispatch_async(dispatch_get_main_queue()) {
+            self.activityIndicator.stopAnimating()
+            self.removeRefreshButton.enabled = true
+            self.presentViewController(alertController, animated: true, completion: nil)
+        }
+    }
 }
