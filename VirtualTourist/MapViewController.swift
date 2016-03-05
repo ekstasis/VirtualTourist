@@ -79,7 +79,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
         let pin = Pin(location: mapCoordinate, context: sharedContext)
         
-        cdManager.saveContext(sharedContext)
+        cdManager.saveContext()
         
         mapView.addAnnotation(pin)
     }
@@ -103,7 +103,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             
             // remove from context
             sharedContext.deleteObject(pin)
-            cdManager.saveContext(sharedContext)
+            cdManager.saveContext()
             
             return
             

@@ -81,15 +81,15 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             
             // Create Photos from flickr API JSON results
             
-            let privateMOC = CoreDataStackManager.sharedInstance.newPrivateQueueContext()
+//            let privateMOC = CoreDataStackManager.sharedInstance.newPrivateQueueContext()
             
-            privateMOC.performBlock {
+//            privateMOC.performBlock {
                 let _ = paths!.map { (path) -> Photo in
-                    Photo(filePath: path, pin: self.pin, context: privateMOC)
+                    Photo(filePath: path, pin: self.pin, context: self.sharedContext)
                 }
                 
-                CoreDataStackManager.sharedInstance.saveContext(privateMOC)
-            }
+                CoreDataStackManager.sharedInstance.saveContext()
+//            }
             
             dispatch_async(dispatch_get_main_queue()) {
                 self.activityIndicator.stopAnimating()
@@ -116,7 +116,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
                 cell.imageView.alpha = 1.0
             }
             
-            CoreDataStackManager.sharedInstance.saveContext(sharedContext)
+            CoreDataStackManager.sharedInstance.saveContext()
             collectionView.deleteItemsAtIndexPaths(indexesForDeletion)
             
             removeMode = false
@@ -128,7 +128,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             for photo in pin.photos {
                 sharedContext.deleteObject(photo)
             }
-            CoreDataStackManager.sharedInstance.saveContext(sharedContext)
+            CoreDataStackManager.sharedInstance.saveContext()
             
             getNewPhotos()
         }

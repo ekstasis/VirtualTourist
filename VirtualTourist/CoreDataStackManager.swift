@@ -77,20 +77,20 @@ class CoreDataStackManager {
     }()
     
     // Adapted from http://pawanpoudel.svbtle.com/fixing-core-data-concurrency-violations
-    func newPrivateQueueContext() -> NSManagedObjectContext {
-        
-        let privateQueueContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
-        privateQueueContext.parentContext = managedObjectContext
-        privateQueueContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        return privateQueueContext
-    }
+//    func newPrivateQueueContext() -> NSManagedObjectContext {
+//        
+//        let privateQueueContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
+//        privateQueueContext.parentContext = managedObjectContext
+//        privateQueueContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+//        return privateQueueContext
+//    }
     
     // MARK: - Core Data Saving support
     
-    func saveContext (moc: NSManagedObjectContext) {
-        if moc.hasChanges {
+    func saveContext() {
+        if managedObjectContext.hasChanges {
             do {
-                try moc.save()
+                try managedObjectContext.save()
             } catch {
                 // Replace this implementation with code to handle the error appropriately.
                 // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
