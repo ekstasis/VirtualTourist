@@ -81,15 +81,13 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             
             // Create Photos from flickr API JSON results
             
-//            let privateMOC = CoreDataStackManager.sharedInstance.newPrivateQueueContext()
-            
-//            privateMOC.performBlock {
+            self.sharedContext.performBlock {
                 let _ = paths!.map { (path) -> Photo in
                     Photo(filePath: path, pin: self.pin, context: self.sharedContext)
                 }
                 
                 CoreDataStackManager.sharedInstance.saveContext()
-//            }
+            }
             
             dispatch_async(dispatch_get_main_queue()) {
                 self.activityIndicator.stopAnimating()
@@ -122,14 +120,13 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             removeMode = false
             removeRefreshButton.setTitle("New Collection", forState: .Normal)
             
-        } else {
+        } else { // New Collection
             
             // Delete all photos and get new ones
             for photo in pin.photos {
                 sharedContext.deleteObject(photo)
             }
             CoreDataStackManager.sharedInstance.saveContext()
-            
             getNewPhotos()
         }
     }
@@ -212,7 +209,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
             removeRefreshButton.setTitle("New Collection", forState: .Normal)
         }
     }
-   
+    
     func showAlert(errorString: String) {
         
         let alertController = UIAlertController(title: "Alert", message: errorString, preferredStyle: .Alert)
