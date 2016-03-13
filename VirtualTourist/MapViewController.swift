@@ -15,7 +15,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     @IBOutlet weak var mapView: MKMapView!
     
     let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
-    let cdManager = CoreDataStackManager.sharedInstance
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -79,7 +78,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
         let pin = Pin(location: mapCoordinate, context: sharedContext)
         
-        cdManager.saveContext()
+        CoreDataStackManager.sharedInstance.saveContext()
         
         mapView.addAnnotation(pin)
     }
@@ -96,20 +95,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         let pin = view.annotation as! Pin
         
-        if editing {
-            
-            // remove from annotations
+        if editing { // remove annotation and delete CD object
             mapView.removeAnnotation(pin)
-            
-            // remove from context
             sharedContext.deleteObject(pin)
-            cdManager.saveContext()
-            
+            CoreDataStackManager.sharedInstance.saveContext()
             return
             
-        } else {
-            
-            // Present photo collection
+        } else { // Present photo collection
             let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
             photosVC.pin = pin
             navigationController?.pushViewController(photosVC, animated: true)
@@ -131,7 +123,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         return annotationView
     }
     
-    // Persist map zoom and center
+    // Persist map zoom and center in user defaults
     func saveCurrentMapRegion(region: MKCoordinateRegion) {
         
         let mapCenter = region.center
