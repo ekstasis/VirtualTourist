@@ -70,11 +70,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
       FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, errorString in
          
          guard errorString == nil else {
-            if errorString == "cancelled" {  // we will get this error frequently during cell reuse
-               return
-            } else {
-               self.showAlert(errorString!)
-            }
+            self.showAlert(errorString!)
             return
          }
          
