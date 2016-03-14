@@ -23,6 +23,10 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
    var removeMode = false
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
    
+//   var numberOfCells: Int {
+//      
+//   }
+   
    // placement of waiting indicator should cover the collection view in the stackView
    var activityIndicatorFrame: CGRect {
       var frame = stackView.arrangedSubviews[1].frame
@@ -67,7 +71,7 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
       
       // Download API JSON image paths
       
-      FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, errorString in
+      FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, numPages, errorString in
          
          guard errorString == nil else {
             self.showAlert(errorString!)

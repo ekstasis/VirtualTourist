@@ -11,25 +11,34 @@ import CoreData
 import MapKit
 
 class Pin: NSManagedObject, MKAnnotation {
-    
-    @NSManaged var latitude: Double
-    @NSManaged var longitude: Double
-    @NSManaged var photos: [Photo]
-    
-    var coordinate: CLLocationCoordinate2D {
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-    
-    override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
-        super.init(entity: entity, insertIntoManagedObjectContext: context!)
-    }
-    
-    init(location: CLLocationCoordinate2D, context: NSManagedObjectContext) {
-        
-        let entity = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)
-        super.init(entity: entity!, insertIntoManagedObjectContext: context)
-        
-        latitude = location.latitude
-        longitude = location.longitude
-    }
+   
+   @NSManaged var latitude: Double
+   @NSManaged var longitude: Double
+   @NSManaged var photos: [Photo]
+   @NSManaged var numPages: Int   // updated from each flickr JSON request
+   
+   var coordinate: CLLocationCoordinate2D {
+      return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+   }
+   
+   // random page value for flickr API request
+   var nextPage: Int {
+      let maxPage = min(numPages, FlickrClient.sharedInstance.maxPage)
+      return Int(arc4random_uniform(UInt32(maxPage))) + 1
+   }
+   
+   override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
+      super.init(entity: entity, insertIntoManagedObjectContext: context!)
+   }
+   
+   init(location: CLLocationCoordinate2D, context: NSManagedObjectContext) {
+      
+      let entity = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)
+      super.init(entity: entity!, insertIntoManagedObjectContext: context)
+      
+      latitude = location.latitude
+      longitude = location.longitude
+      
+      numPages = 1 // updates on subsequent calls to flickr API
+   }
 }
