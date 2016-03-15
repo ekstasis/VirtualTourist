@@ -14,7 +14,7 @@ class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000 
-   let photosPerPage = 11 // Will be set by Collection View to accomodate different devices
+   let photosPerPage = 40
    
    var maxPage: Int {
       return photoLimit / photosPerPage

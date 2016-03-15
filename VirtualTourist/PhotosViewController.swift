@@ -11,7 +11,8 @@ import MapKit
 import CoreData
 import Foundation
 
-class PhotosViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
+class PhotosViewController:   UIViewController,
+                              UICollectionViewDataSource, UICollectionViewDelegate {
    
    @IBOutlet weak var stackView: UIStackView!
    @IBOutlet weak var mapView: MKMapView!
@@ -23,10 +24,6 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
    var removeMode = false
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
    
-//   var numberOfCells: Int {
-//      
-//   }
-   
    // placement of waiting indicator should cover the collection view in the stackView
    var activityIndicatorFrame: CGRect {
       var frame = stackView.arrangedSubviews[1].frame
@@ -37,9 +34,14 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
    override func viewDidLoad() {
       super.viewDidLoad()
       
+      collectionView.allowsMultipleSelection = true
       collectionView.dataSource = self
       collectionView.delegate = self
-      collectionView.allowsMultipleSelection = true
+      
+      let layout = PhotoAlbumFlowLayout()
+      layout.minimumInteritemSpacing = 0
+      layout.minimumLineSpacing = 0
+      collectionView.collectionViewLayout = layout
    }
    
    override func viewWillAppear(animated: Bool) {
@@ -56,9 +58,11 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
       }
    }
    
-   // For device rotation
-   override func viewDidLayoutSubviews() {
-      activityIndicator.frame = activityIndicatorFrame
+   override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
+      dispatch_async(dispatch_get_main_queue()) {
+         self.activityIndicator.frame = self.activityIndicatorFrame
+      }
+      
    }
    
    func getNewPhotos() {
@@ -146,6 +150,8 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
          return cell
       }
       
+      print("cell for item")
+      
       let photo = pin.photos[indexPath.item]
       configureCell(cell, photo: photo)
       return cell
@@ -195,13 +201,16 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
       removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-      
       cell.imageView.alpha = 0.3
+      
+      print("select: \(indexPath.item)")
+
    }
    
    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+
       cell.imageView.alpha = 1.0
       
       // If this was the last cell to be deselected, get out of remove mode
@@ -209,6 +218,8 @@ class PhotosViewController: UIViewController, UICollectionViewDataSource, UIColl
          removeMode = false
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
       }
+      print("DEselect: \(indexPath.item)")
+
    }
    
    func showAlert(errorString: String) {
