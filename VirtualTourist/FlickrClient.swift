@@ -14,10 +14,16 @@ class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000 
-   let photosPerPage = 11 // Will be set by Collection View to accomodate different devices
    
-   var maxPage: Int {
-      return photoLimit / photosPerPage
+//   var maxPage: Int {
+//      return photoLimit / photosPerPage
+//   }
+   
+   // random page value for flickr API request
+   func nextPage(photosPerPage: Int, numPages: Int) -> Int {
+      let maxPage = photoLimit / photosPerPage
+      let max = min(numPages, maxPage)
+      return Int(arc4random_uniform(UInt32(max))) + 1
    }
    
    static let sharedInstance = FlickrClient()
@@ -36,10 +42,13 @@ class FlickrClient {
    
    func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, numPages: Int?, errorString: String?) -> Void) {
       
+      ////////////
+      let photosPerPage = 5
+      
       parameters.append("lat=\(pin.latitude)")
       parameters.append("lon=\(pin.longitude)")
       parameters.append("per_page=\(photosPerPage)")
-      parameters.append("page=\(pin.nextPage)")
+      parameters.append("page=\(nextPage(photosPerPage, numPages: 5))")  /////////
       
       // API arguments from parameters property above
       let urlString = baseURL + "?" + parameters.joinWithSeparator("&")

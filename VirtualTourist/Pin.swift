@@ -21,12 +21,6 @@ class Pin: NSManagedObject, MKAnnotation {
       return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
    }
    
-   // random page value for flickr API request
-   var nextPage: Int {
-      let maxPage = min(numPages, FlickrClient.sharedInstance.maxPage)
-      return Int(arc4random_uniform(UInt32(maxPage))) + 1
-   }
-   
    override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
       super.init(entity: entity, insertIntoManagedObjectContext: context!)
    }
