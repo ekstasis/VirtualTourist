@@ -68,7 +68,7 @@ class FlickrClient {
          
          print("page=\(photosDict["page"]!) of \(photosDict["pages"]!)")
          
-         let numPages = photosDict["pages"] as! Int32
+         let numPages = Int32(photosDict["pages"] as! Int)
          
          pin.numPages = numPages
          
