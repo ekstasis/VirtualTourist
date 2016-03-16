@@ -15,17 +15,17 @@ class Pin: NSManagedObject, MKAnnotation {
    @NSManaged var latitude: Double
    @NSManaged var longitude: Double
    @NSManaged var photos: [Photo]
-   @NSManaged var numPages64: Int64   // updated from each flickr JSON request
+   @NSManaged var numPages: NSNumber   // updated from each flickr JSON request
    
    // iPhone 4 32-bit Int shenanigans
-   var numPages: Int {
-      get {
-         return Int(numPages64)
-      }
-      set {
-         numPages64 = Int64(newValue)
-      }
-   }
+//   var numPages: Int {
+//      get {
+//         return Int(numPages64)
+//      }
+//      set {
+//         numPages64 = Int64(newValue)
+//      }
+//   }
    
    var coordinate: CLLocationCoordinate2D {
       return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -34,7 +34,7 @@ class Pin: NSManagedObject, MKAnnotation {
    // random page value for flickr API request
    var nextPage: Int {
       let pageLimit = FlickrClient.sharedInstance.maxPage // flickr photo limit / per_page
-      let maxPage = min(numPages, pageLimit)
+      let maxPage = min(Int(numPages), pageLimit)
       return Int(arc4random_uniform(UInt32(maxPage))) + 1
    }
    
