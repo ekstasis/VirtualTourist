@@ -70,7 +70,7 @@ class FlickrClient {
          
          let numPages = photosDict["pages"] as! Int
          
-         pin.numPages = numPages
+         pin.numPages = Int32(numPages)
          
          // Generate flickr photo URLs from API JSON
          let paths = photoArray.map { (dict) -> String in
