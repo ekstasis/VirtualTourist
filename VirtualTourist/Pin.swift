@@ -15,7 +15,17 @@ class Pin: NSManagedObject, MKAnnotation {
    @NSManaged var latitude: Double
    @NSManaged var longitude: Double
    @NSManaged var photos: [Photo]
-   @NSManaged var numPages: Int   // updated from each flickr JSON request
+   @NSManaged var numPages64: Int64   // updated from each flickr JSON request
+   
+   // iPhone 4 32-bit Int shenanigans
+   var numPages: Int {
+      get {
+         return Int(numPages64)
+      }
+      set {
+         numPages64 = Int64(newValue)
+      }
+   }
    
    var coordinate: CLLocationCoordinate2D {
       return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
