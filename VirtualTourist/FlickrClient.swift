@@ -34,7 +34,7 @@ class FlickrClient {
       "has_geo=1",
    ]
    
-   func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, numPages: Int?, errorString: String?) -> Void) {
+   func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, numPages: NSNumber?, errorString: String?) -> Void) {
       
       parameters.append("lat=\(pin.latitude)")
       parameters.append("lon=\(pin.longitude)")
@@ -68,7 +68,7 @@ class FlickrClient {
          
          print("page=\(photosDict["page"]!) of \(photosDict["pages"]!)")
          
-         let numPages = photosDict["pages"] as! Int
+         let numPages = photosDict["pages"] as! NSNumber
          
          pin.numPages = numPages
          
