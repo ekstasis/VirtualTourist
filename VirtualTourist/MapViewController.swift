@@ -26,14 +26,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: "dropPin:")
       longPressRecognizer.minimumPressDuration = 1.0
       mapView.addGestureRecognizer(longPressRecognizer)
-      
-//      setInitialLocation()
-//      populatePins()
-      
    }
    
-   override func viewDidAppear(animated: Bool) {
-      super.viewDidAppear(animated)
+   override func viewWillLayoutSubviews() {
+      super.viewWillLayoutSubviews()
       setInitialLocation()
       populatePins()
    }
@@ -53,11 +49,11 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          let region = MKCoordinateRegionMake(mapCenter, span)
          
          print("\nsetInitialLocation(): ")
-         print("   LongitudeDelta loaded from UserDefaults = \(spanLongitudeDelta)")
-         print("   regionThatFits.LongitudeDelta = \(mapView.regionThatFits(region).span.longitudeDelta)")
-//         print(span)
+//         print("   LongitudeDelta loaded from UserDefaults = \(spanLongitudeDelta)")
+//         print("   regionThatFits.LongitudeDelta = \(mapView.regionThatFits(region).span.longitudeDelta)")
          
-//         print(region)
+         print(region)
+         print(mapView.regionThatFits(region))
          
          print("\n- setInitialLocation() about to setRegion -")
          mapView.setRegion(region, animated: true)
@@ -146,13 +142,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    func saveCurrentMapRegion() {
       
       print("   saveCurrentMapRegion(): ")
-      print("      mapView.region's LongDelta now equals = \(mapView.region.span.longitudeDelta)")
-      print("      mapView.regionThatFits LongDelta now equals = \(mapView.regionThatFits(mapView.region).span.longitudeDelta)")
+//      print("      mapView.region's LongDelta now equals = \(mapView.region.span.longitudeDelta)")
+//      print("      mapView.regionThatFits LongDelta now equals = \(mapView.regionThatFits(mapView.region).span.longitudeDelta)")
       
       let region = mapView.regionThatFits(mapView.region)
       let mapCenter = region.center
       let span = region.span
       let defaults = NSUserDefaults.standardUserDefaults()
+      
+         print(region)
+         print(mapView.regionThatFits(region))
       
       let locationDictionary =
       [
