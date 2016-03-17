@@ -52,6 +52,11 @@ class PhotosViewController:   UIViewController,
       activityIndicator.alpha = 0.8
       
       setUpMap()
+   }
+   
+   // getNewPhotos needs frame of collection view for activity indicator, not available until after appear
+   override func viewDidAppear(animated: Bool) {
+      super.viewDidAppear(animated)
       
       if pin.photos.isEmpty {
          getNewPhotos()
@@ -104,7 +109,7 @@ class PhotosViewController:   UIViewController,
    
    func setUpMap() {
       let mapCenter = pin.coordinate
-      let span = MKCoordinateSpanMake(3.0, 3.0)
+      let span = MKCoordinateSpanMake(0.5, 0.5)
       mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
       mapView.addAnnotation(pin)
    }
@@ -149,8 +154,6 @@ class PhotosViewController:   UIViewController,
       guard !pin.photos.isEmpty else {
          return cell
       }
-      
-      print("cell for item")
       
       let photo = pin.photos[indexPath.item]
       configureCell(cell, photo: photo)
@@ -202,9 +205,6 @@ class PhotosViewController:   UIViewController,
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
       cell.imageView.alpha = 0.3
-      
-      print("select: \(indexPath.item)")
-
    }
    
    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
@@ -218,8 +218,6 @@ class PhotosViewController:   UIViewController,
          removeMode = false
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
       }
-      print("DEselect: \(indexPath.item)")
-
    }
    
    func showAlert(errorString: String) {

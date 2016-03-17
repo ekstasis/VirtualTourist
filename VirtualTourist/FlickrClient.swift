@@ -62,11 +62,8 @@ class FlickrClient {
          }
          
          let photosDict = json["photos"] as! [String : AnyObject]
-//         print(photosDict)
          
          let photoArray = photosDict["photo"] as! [[String: AnyObject]]
-         
-         print("page=\(photosDict["page"]!) of \(photosDict["pages"]!)")
          
          let numPages = photosDict["pages"] as! NSNumber
          
@@ -76,7 +73,6 @@ class FlickrClient {
          let paths = photoArray.map { (dict) -> String in
             let farm = dict["farm"] as! Int
             let id = dict["id"] as! String
-//            print(id)
             let secret = dict["secret"] as! String
             let server = dict["server"] as! String
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
