@@ -33,6 +33,8 @@ class PhotosViewController:   UIViewController,
       return frame
    }
    
+   let cellDimAlpha: CGFloat = 0.3
+   
    override func viewDidLoad() {
       super.viewDidLoad()
       
@@ -120,14 +122,15 @@ class PhotosViewController:   UIViewController,
    @IBAction func removeOrRefreshButton(sender: AnyObject) {
       
       if removeMode {
+         
          let indexesForDeletion = collectionView.indexPathsForSelectedItems()!
+         
          for index in indexesForDeletion {
             sharedContext.deleteObject(pin.photos[index.item])
-            let cell = collectionView.cellForItemAtIndexPath(index) as! PhotoCollectionViewCell
-            cell.imageView.alpha = 1.0
          }
          
          CoreDataStackManager.sharedInstance.saveContext()
+         
          collectionView.deleteItemsAtIndexPaths(indexesForDeletion)
          
          removeMode = false
@@ -158,6 +161,15 @@ class PhotosViewController:   UIViewController,
       }
       
       let photo = pin.photos[indexPath.item]
+      
+      if let indexesForDeletion = collectionView.indexPathsForSelectedItems() {
+         if indexesForDeletion.contains(indexPath) {
+            cell.imageView.alpha = cellDimAlpha
+         } else {
+            cell.imageView.alpha = 1.0
+         }
+      }
+      
       configureCell(cell, photo: photo)
       return cell
    }
@@ -204,7 +216,7 @@ class PhotosViewController:   UIViewController,
       removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-      cell.imageView.alpha = 0.3
+      cell.imageView.alpha = cellDimAlpha
    }
    
    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {

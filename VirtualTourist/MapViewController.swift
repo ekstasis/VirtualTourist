@@ -25,7 +25,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: "dropPin:")
       longPressRecognizer.minimumPressDuration = 1.0
       mapView.addGestureRecognizer(longPressRecognizer)
-      
+   }
+   
+   override func viewWillLayoutSubviews() {
       setInitialLocation()
    }
    
@@ -107,13 +109,15 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
       
-      let annotationView: MKAnnotationView
+      let annotationView: MKPinAnnotationView
       
       if let view = mapView.dequeueReusableAnnotationViewWithIdentifier("Pin") {
-         annotationView = view
+         annotationView = view as! MKPinAnnotationView
       } else {
          annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
+         annotationView.animatesDrop = true
       }
+      
       
       annotationView.canShowCallout = false
       
