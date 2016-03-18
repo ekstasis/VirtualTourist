@@ -62,9 +62,7 @@ class FlickrClient {
          }
          
          let photosDict = json["photos"] as! [String : AnyObject]
-         
          let photoArray = photosDict["photo"] as! [[String: AnyObject]]
-         
          let numPages = photosDict["pages"] as! NSNumber
          
          pin.numPages = numPages
@@ -78,8 +76,6 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-         
-         
          completionHandler(paths: paths, numPages: numPages, errorString: nil)
       }
       
@@ -89,7 +85,6 @@ class FlickrClient {
    func imageDownloadTask(path: String, completionHandler: (imageData: NSData?, errorString: String?) -> Void) -> NSURLSessionDataTask {
       
       let request = NSURLRequest(URL: NSURL(string: path)!)
-      
       let task = urlSession.dataTaskWithRequest(request) { data, response, error in
          
          guard error == nil else {

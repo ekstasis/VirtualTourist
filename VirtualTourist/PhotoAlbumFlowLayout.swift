@@ -26,6 +26,7 @@ class PhotoAlbumFlowLayout: UICollectionViewFlowLayout {
       
       
       if let collectionView = self.collectionView {
+         
          var newItemSize = itemSize
          
          // Always use an item count of at least 1

@@ -23,6 +23,8 @@ class PhotosViewController:   UIViewController,
    var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
    var removeMode = false
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
+   lazy var fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+   lazy var fileManager = NSFileManager.defaultManager()
    
    // placement of waiting indicator should cover the collection view in the stackView
    var activityIndicatorFrame: CGRect {
@@ -54,7 +56,7 @@ class PhotosViewController:   UIViewController,
       setUpMap()
    }
    
-   // getNewPhotos needs frame of collection view for activity indicator, not available until after appear
+   // getNewPhotos needs frame of collection view for activity indicator, not available until after didAppear
    override func viewDidAppear(animated: Bool) {
       super.viewDidAppear(animated)
       
@@ -63,6 +65,7 @@ class PhotosViewController:   UIViewController,
       }
    }
    
+   // For activity indicator when rotating
    override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
       dispatch_async(dispatch_get_main_queue()) {
          self.activityIndicator.frame = self.activityIndicatorFrame
@@ -79,7 +82,6 @@ class PhotosViewController:   UIViewController,
       activityIndicator.startAnimating()
       
       // Download API JSON image paths
-      
       FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, numPages, errorString in
          
          guard errorString == nil else {
@@ -109,7 +111,7 @@ class PhotosViewController:   UIViewController,
    
    func setUpMap() {
       let mapCenter = pin.coordinate
-      let span = MKCoordinateSpanMake(0.5, 0.5)
+      let span = MKCoordinateSpanMake(0.7, 0.7)
       mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
       mapView.addAnnotation(pin)
    }
@@ -162,9 +164,7 @@ class PhotosViewController:   UIViewController,
    
    func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
       
-      let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
       let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
-      let fileManager = NSFileManager.defaultManager()
       
       if let imageData = fileManager.contentsAtPath(filePath) { // Image already downloaded
          cell.imageView.image = UIImage(data: imageData)
