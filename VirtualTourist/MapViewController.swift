@@ -20,50 +20,31 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       super.viewDidLoad()
       
       navigationItem.rightBarButtonItem = editButtonItem()
-      
       mapView.delegate = self
       
       let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: "dropPin:")
       longPressRecognizer.minimumPressDuration = 1.0
       mapView.addGestureRecognizer(longPressRecognizer)
-   }
-   
-   override func viewWillLayoutSubviews() {
-      super.viewWillLayoutSubviews()
+      
       setInitialLocation()
-      populatePins()
    }
    
-   // Retrieve persisted map center and zoom
    func setInitialLocation() {
       
       let defaults = NSUserDefaults.standardUserDefaults()
       
+      // Retrieve persisted map region if available
       if let regionData = defaults.objectForKey("Region Data") as? NSDictionary {
          let latitude = regionData["Latitude"] as! CLLocationDegrees
          let longitude = regionData["Longitude"] as! CLLocationDegrees
          let spanLatitudeDelta = regionData["Latitude Delta"] as! CLLocationDegrees
          let spanLongitudeDelta = regionData["Longitude Delta"] as! CLLocationDegrees
+         
          let mapCenter = CLLocationCoordinate2DMake(latitude, longitude)
          let span = MKCoordinateSpanMake(spanLatitudeDelta, spanLongitudeDelta)
          let region = MKCoordinateRegionMake(mapCenter, span)
          
-         print("\nsetInitialLocation(): ")
-//         print("   LongitudeDelta loaded from UserDefaults = \(spanLongitudeDelta)")
-//         print("   regionThatFits.LongitudeDelta = \(mapView.regionThatFits(region).span.longitudeDelta)")
-         
-         print(region)
-         print(mapView.regionThatFits(region))
-         
-         print("\n- setInitialLocation() about to setRegion -")
          mapView.setRegion(region, animated: true)
-         
-         print("\nsetInitialLocation(): ")
-         print("   mapView's LonDelta now equals = \(mapView.region.span.longitudeDelta)")
-         
-      } else {
-         // Save the map's default initial region (from iPhone international settings)
-         saveCurrentMapRegion()
       }
    }
    
@@ -71,15 +52,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    func populatePins() {
       
       let fetchRequest = NSFetchRequest(entityName: "Pin")
-      var pins = [Pin]()
       
       do {
-         pins = try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
-      } catch {
-         return
+         let pins = try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
+         mapView.addAnnotations(pins)
+      } catch let error as NSError {
+         print(error)
       }
-      
-      mapView.addAnnotations(pins)
    }
    
    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
@@ -99,8 +78,11 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Continually persist map center
    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-      print("\nregionDidChange:")
       saveCurrentMapRegion()
+   }
+   
+   func mapViewDidFinishLoadingMap(mapView: MKMapView) {
+      populatePins()
    }
    
    // Handles pin deletion and transition to photo album depending on whether editing or not
@@ -141,17 +123,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    // Persist map zoom and center in user defaults
    func saveCurrentMapRegion() {
       
-      print("   saveCurrentMapRegion(): ")
-//      print("      mapView.region's LongDelta now equals = \(mapView.region.span.longitudeDelta)")
-//      print("      mapView.regionThatFits LongDelta now equals = \(mapView.regionThatFits(mapView.region).span.longitudeDelta)")
-      
-      let region = mapView.regionThatFits(mapView.region)
+      let region = mapView.region
       let mapCenter = region.center
       let span = region.span
       let defaults = NSUserDefaults.standardUserDefaults()
-      
-         print(region)
-         print(mapView.regionThatFits(region))
       
       let locationDictionary =
       [
@@ -160,8 +135,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          "Latitude Delta" : span.latitudeDelta,
          "Longitude Delta" : span.longitudeDelta
       ]
-      
-      print("      LongitudeDelta saved to defaults = \(locationDictionary["Longitude Delta"]!)")
       
       defaults.setObject(locationDictionary, forKey: "Region Data")
    }
