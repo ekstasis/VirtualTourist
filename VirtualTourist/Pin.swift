@@ -18,7 +18,15 @@ class Pin: NSManagedObject, MKAnnotation {
    @NSManaged var availablePages: NSNumber   // updated with each flickr JSON request
    
    var coordinate: CLLocationCoordinate2D {
-      return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+      get {
+         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+      }
+      set(newValue) {
+         willChangeValueForKey("coordinate")
+         latitude = newValue.latitude
+         longitude = newValue.longitude
+         didChangeValueForKey("coordinate")
+      }
    }
    
    // random page value for flickr API request

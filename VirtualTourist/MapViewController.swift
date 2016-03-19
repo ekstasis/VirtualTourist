@@ -14,6 +14,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    @IBOutlet weak var mapView: MKMapView!
    
+   var droppedPin: Pin!
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
    
    override func viewDidLoad() {
@@ -65,17 +66,28 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
       
-      guard longPressRecognizer.state == .Began else {
-         return
-      }
-      
       let tapLocation = longPressRecognizer.locationInView(mapView)
       let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
-      let pin = Pin(location: mapCoordinate, context: sharedContext)
       
-      CoreDataStackManager.sharedInstance.saveContext()
-      
-      mapView.addAnnotation(pin)
+      switch longPressRecognizer.state {
+         
+      case .Began:
+         print("began")
+         droppedPin = Pin(location: mapCoordinate, context: sharedContext)
+         mapView.addAnnotation(droppedPin)
+         
+      case .Changed:
+         print("changed")
+         droppedPin.coordinate = mapCoordinate
+         
+      case .Ended:
+         print("ended")
+         CoreDataStackManager.sharedInstance.saveContext()
+         
+      default:
+         print("default")
+         return
+      }
    }
    
    // Continually persist map center
@@ -116,13 +128,27 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       } else {
          annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
          annotationView.animatesDrop = true
+         annotationView.canShowCallout = false
       }
       
-      
-      annotationView.canShowCallout = false
-      
+         annotationView.draggable = true
       return annotationView
    }
+   
+   ///
+//   func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, didChangeDragState newState: MKAnnotationViewDragState, fromOldState oldState: MKAnnotationViewDragState) {
+//      
+//      switch newState {
+//      case .Starting:
+//         print("starting")
+//         view.dragState = .Dragging
+//      case .Ending, .Canceling:
+//         print("ending/cancel")
+//         view.dragState = .None
+//      default:
+//         return
+//      }
+//   }
    
    // Persist map zoom and center in user defaults
    func saveCurrentMapRegion() {
