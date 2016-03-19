@@ -84,7 +84,7 @@ class PhotosViewController:   UIViewController,
       activityIndicator.startAnimating()
       
       // Download API JSON image paths
-      FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, numPages, errorString in
+      FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, availablePages, errorString in
          
          guard errorString == nil else {
             self.showAlert(errorString!)
@@ -95,6 +95,9 @@ class PhotosViewController:   UIViewController,
          
          // We are not on the main thread, but no need to create a private context (blocking UI is OK)
          self.sharedContext.performBlock {
+            
+            self.pin.availablePages = availablePages!
+            
             let _ = paths!.map { (path) -> Photo in
                Photo(filePath: path, pin: self.pin, context: self.sharedContext)
             }

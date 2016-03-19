@@ -34,7 +34,7 @@ class FlickrClient {
       "has_geo=1",
    ]
    
-   func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, numPages: NSNumber?, errorString: String?) -> Void) {
+   func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, availablePages: NSNumber?, errorString: String?) -> Void) {
       
       parameters.append("lat=\(pin.latitude)")
       parameters.append("lon=\(pin.longitude)")
@@ -49,7 +49,7 @@ class FlickrClient {
       let task = urlSession.dataTaskWithRequest(request) { data, response, error in
          
          guard error == nil else {
-            completionHandler(paths: nil, numPages: nil, errorString: error!.localizedDescription)
+            completionHandler(paths: nil, availablePages: nil, errorString: error!.localizedDescription)
             return
          }
          
@@ -58,14 +58,12 @@ class FlickrClient {
          do {
             json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
          } catch let error as NSError {
-            completionHandler(paths: nil, numPages: nil, errorString: error.localizedDescription)
+            completionHandler(paths: nil, availablePages: nil, errorString: error.localizedDescription)
          }
          
          let photosDict = json["photos"] as! [String : AnyObject]
          let photoArray = photosDict["photo"] as! [[String: AnyObject]]
          let numPages = photosDict["pages"] as! NSNumber
-         
-         pin.numPages = numPages
          
          // Generate flickr photo URLs from API JSON
          let paths = photoArray.map { (dict) -> String in
@@ -76,7 +74,7 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-         completionHandler(paths: paths, numPages: numPages, errorString: nil)
+         completionHandler(paths: paths, availablePages: numPages, errorString: nil)
       }
       
       task.resume()
