@@ -20,11 +20,12 @@ class PhotosViewController:   UIViewController,
    @IBOutlet weak var removeRefreshButton: UIButton!
    
    var pin: Pin!
-   var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
-   var removeMode = false
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
    lazy var fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
    lazy var fileManager = NSFileManager.defaultManager()
+   var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
+   var removeMode = false
+   let cellDimAlpha: CGFloat = 0.3
    
    // placement of waiting indicator should cover the collection view in the stackView
    var activityIndicatorFrame: CGRect {
@@ -32,8 +33,6 @@ class PhotosViewController:   UIViewController,
       frame.origin.y += stackView.frame.origin.y
       return frame
    }
-   
-   let cellDimAlpha: CGFloat = 0.3
    
    override func viewDidLoad() {
       super.viewDidLoad()
