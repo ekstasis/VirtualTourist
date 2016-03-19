@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D8006A581C9DF4D000031703 /* SavedRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8006A571C9DF4D000031703 /* SavedRegion.swift */; };
 		D8121C7A1C56CC6400AB4250 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8121C791C56CC6400AB4250 /* AppDelegate.swift */; };
 		D8121C7F1C56CC6400AB4250 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D8121C7D1C56CC6400AB4250 /* Main.storyboard */; };
 		D8121C821C56CC6400AB4250 /* VirtualTourist.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = D8121C801C56CC6400AB4250 /* VirtualTourist.xcdatamodeld */; };
@@ -24,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D8006A571C9DF4D000031703 /* SavedRegion.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SavedRegion.swift; sourceTree = "<group>"; };
 		D8121C761C56CC6400AB4250 /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8121C791C56CC6400AB4250 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D8121C7E1C56CC6400AB4250 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -78,6 +80,7 @@
 				D8121C8E1C56CCAA00AB4250 /* MapViewController.swift */,
 				D8121C991C596DF000AB4250 /* PhotosViewController.swift */,
 				D8121C941C56D8A300AB4250 /* Photo.swift */,
+				D8006A571C9DF4D000031703 /* SavedRegion.swift */,
 				D8121C921C56D81B00AB4250 /* Pin.swift */,
 				D8688C8A1C5C0B6C00FB2149 /* FlickrClient.swift */,
 				D8121C791C56CC6400AB4250 /* AppDelegate.swift */,
@@ -171,6 +174,7 @@
 				D8121C821C56CC6400AB4250 /* VirtualTourist.xcdatamodeld in Sources */,
 				D8121C931C56D81B00AB4250 /* Pin.swift in Sources */,
 				D8121C911C56D7D100AB4250 /* CoreDataStackManager.swift in Sources */,
+				D8006A581C9DF4D000031703 /* SavedRegion.swift in Sources */,
 				D8121C8F1C56CCAA00AB4250 /* MapViewController.swift in Sources */,
 				D8FB64A31C989D900079C8D6 /* PhotoAlbumFlowLayout.swift in Sources */,
 				D8688C8B1C5C0B6C00FB2149 /* FlickrClient.swift in Sources */,

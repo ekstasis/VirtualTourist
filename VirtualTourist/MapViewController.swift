@@ -15,6 +15,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    @IBOutlet weak var mapView: MKMapView!
    
    var droppedPin: Pin!
+   var savedRegion: SavedRegion!
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
    
    override func viewDidLoad() {
@@ -26,29 +27,39 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: "dropPin:")
       longPressRecognizer.minimumPressDuration = 1.0
       mapView.addGestureRecognizer(longPressRecognizer)
+      getSavedRegion()
    }
    
    override func viewWillLayoutSubviews() {
-      setInitialLocation()
-   }
-   
-   func setInitialLocation() {
-      
-      let defaults = NSUserDefaults.standardUserDefaults()
-      
-      // Retrieve persisted map region if available
-      if let regionData = defaults.objectForKey("Region Data") as? NSDictionary {
-         let latitude = regionData["Latitude"] as! CLLocationDegrees
-         let longitude = regionData["Longitude"] as! CLLocationDegrees
-         let spanLatitudeDelta = regionData["Latitude Delta"] as! CLLocationDegrees
-         let spanLongitudeDelta = regionData["Longitude Delta"] as! CLLocationDegrees
-         
-         let mapCenter = CLLocationCoordinate2DMake(latitude, longitude)
-         let span = MKCoordinateSpanMake(spanLatitudeDelta, spanLongitudeDelta)
-         let region = MKCoordinateRegionMake(mapCenter, span)
-         
+      if let region = savedRegion?.region {
          mapView.setRegion(region, animated: true)
       }
+   }
+   
+   func getSavedRegion() {
+      
+      let fetchRequest = NSFetchRequest(entityName: "SavedRegion")
+      
+      do {
+         let savedRegions = try sharedContext.executeFetchRequest(fetchRequest) as! [SavedRegion]
+         if !savedRegions.isEmpty {
+            savedRegion = savedRegions[0]
+         }
+         
+      } catch let error as NSError {
+         print(error)
+      }
+      
+      //         let latitude = regionData["Latitude"] as! CLLocationDegrees
+      //         let longitude = regionData["Longitude"] as! CLLocationDegrees
+      //         let spanLatitudeDelta = regionData["Latitude Delta"] as! CLLocationDegrees
+      //         let spanLongitudeDelta = regionData["Longitude Delta"] as! CLLocationDegrees
+      //
+      //         let mapCenter = CLLocationCoordinate2DMake(latitude, longitude)
+      //         let span = MKCoordinateSpanMake(spanLatitudeDelta, spanLongitudeDelta)
+      //         let region = MKCoordinateRegionMake(mapCenter, span)
+      //
+      //         mapView.setRegion(region, animated: true)
    }
    
    // Fetch pins from Core Data
@@ -131,41 +142,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          annotationView.canShowCallout = false
       }
       
-         annotationView.draggable = true
+      annotationView.draggable = true
       return annotationView
    }
    
-   ///
-//   func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, didChangeDragState newState: MKAnnotationViewDragState, fromOldState oldState: MKAnnotationViewDragState) {
-//      
-//      switch newState {
-//      case .Starting:
-//         print("starting")
-//         view.dragState = .Dragging
-//      case .Ending, .Canceling:
-//         print("ending/cancel")
-//         view.dragState = .None
-//      default:
-//         return
-//      }
-//   }
-   
    // Persist map zoom and center in user defaults
    func saveCurrentMapRegion() {
-      
-      let region = mapView.region
-      let mapCenter = region.center
-      let span = region.span
-      let defaults = NSUserDefaults.standardUserDefaults()
-      
-      let locationDictionary =
-      [
-         "Latitude" : mapCenter.latitude,
-         "Longitude" : mapCenter.longitude,
-         "Latitude Delta" : span.latitudeDelta,
-         "Longitude Delta" : span.longitudeDelta
-      ]
-      
-      defaults.setObject(locationDictionary, forKey: "Region Data")
+      if let regionToBeSaved = savedRegion {
+         print("save")
+         regionToBeSaved.region = mapView.region
+         CoreDataStackManager.sharedInstance.saveContext()
+      }
    }
 }
