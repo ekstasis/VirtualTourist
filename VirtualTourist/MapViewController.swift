@@ -49,17 +49,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       } catch let error as NSError {
          print(error)
       }
-      
-      //         let latitude = regionData["Latitude"] as! CLLocationDegrees
-      //         let longitude = regionData["Longitude"] as! CLLocationDegrees
-      //         let spanLatitudeDelta = regionData["Latitude Delta"] as! CLLocationDegrees
-      //         let spanLongitudeDelta = regionData["Longitude Delta"] as! CLLocationDegrees
-      //
-      //         let mapCenter = CLLocationCoordinate2DMake(latitude, longitude)
-      //         let span = MKCoordinateSpanMake(spanLatitudeDelta, spanLongitudeDelta)
-      //         let region = MKCoordinateRegionMake(mapCenter, span)
-      //
-      //         mapView.setRegion(region, animated: true)
    }
    
    // Fetch pins from Core Data
@@ -90,7 +79,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          droppedPin.coordinate = mapCoordinate
          
       case .Ended:
-         CoreDataStackManager.sharedInstance.saveContext()
+         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
+         droppedPin.fetchPhotos()
          
       default:
          return
@@ -116,7 +106,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       if editing { // remove annotation and delete CD object
          mapView.removeAnnotation(pin)
          sharedContext.deleteObject(pin)
-         CoreDataStackManager.sharedInstance.saveContext()
+         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
          return
          
       } else { // Present photo collection
@@ -146,7 +136,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    func saveCurrentMapRegion() {
       if let regionToBeSaved = savedRegion {
          regionToBeSaved.region = mapView.region
-         CoreDataStackManager.sharedInstance.saveContext()
+         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
       }
    }
 }

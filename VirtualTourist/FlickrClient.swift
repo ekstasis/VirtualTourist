@@ -14,7 +14,7 @@ class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000 
-   let photosPerPage = 40
+   let photosPerPage = 10
    
    var maxPage: Int {
       return photoLimit / photosPerPage
@@ -34,7 +34,7 @@ class FlickrClient {
       "has_geo=1",
    ]
    
-   func fetchPhotoPaths(pin: Pin, completionHandler: (paths: [String]?, availablePages: NSNumber?, errorString: String?) -> Void) {
+   func fetchPhotoPaths(pin: Pin, completionHandler: (imageURLs: [String]?, availablePages: NSNumber?, errorString: String?) -> Void) {
       
       parameters.append("lat=\(pin.latitude)")
       parameters.append("lon=\(pin.longitude)")
@@ -49,7 +49,7 @@ class FlickrClient {
       let task = urlSession.dataTaskWithRequest(request) { data, response, error in
          
          guard error == nil else {
-            completionHandler(paths: nil, availablePages: nil, errorString: error!.localizedDescription)
+            completionHandler(imageURLs: nil, availablePages: nil, errorString: error!.localizedDescription)
             return
          }
          
@@ -58,7 +58,7 @@ class FlickrClient {
          do {
             json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
          } catch let error as NSError {
-            completionHandler(paths: nil, availablePages: nil, errorString: error.localizedDescription)
+            completionHandler(imageURLs: nil, availablePages: nil, errorString: error.localizedDescription)
          }
          
          let photosDict = json["photos"] as! [String : AnyObject]
@@ -66,7 +66,7 @@ class FlickrClient {
          let numPages = photosDict["pages"] as! NSNumber
          
          // Generate flickr photo URLs from API JSON
-         let paths = photoArray.map { (dict) -> String in
+         let imageURLs = photoArray.map { (dict) -> String in
             let farm = dict["farm"] as! Int
             let id = dict["id"] as! String
             let secret = dict["secret"] as! String
@@ -74,26 +74,32 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-         completionHandler(paths: paths, availablePages: numPages, errorString: nil)
+         print(imageURLs)
+         completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
       }
       
       task.resume()
    }
    
-   func imageDownloadTask(path: String, completionHandler: (imageData: NSData?, errorString: String?) -> Void) -> NSURLSessionDataTask {
+   func downloadImage(imageURL: String, completion: (fileName: String) -> Void) {
       
-      let request = NSURLRequest(URL: NSURL(string: path)!)
+      let request = NSURLRequest(URL: NSURL(string: imageURL)!)
       let task = urlSession.dataTaskWithRequest(request) { data, response, error in
          
          guard error == nil else {
-            completionHandler(imageData: nil, errorString: error!.localizedDescription)
+            //            completionHandler(imageData: nil, errorString: error!.localizedDescription)
             return
          }
          
-         completionHandler(imageData: data, errorString: nil)
+         let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+         let fileName = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
+         
+         //         completionHandler(imageData: data, errorString: nil)
+         let image = UIImage(data: data!)!
+         let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
+         imageToBeSaved.writeToFile(filePath, atomically: true)
       }
       
       task.resume()
-      return task
    }
 }

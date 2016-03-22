@@ -88,7 +88,7 @@ class PhotosViewController:   UIViewController,
       super.viewDidAppear(animated)
 
       if frc.sections![0].numberOfObjects == 0 {
-         getNewPhotos()
+//         getNewPhotos()
       }
    }
    
@@ -102,44 +102,7 @@ class PhotosViewController:   UIViewController,
    
    // MARK:  Main functions
    
-   func getNewPhotos() {
-      
-      removeRefreshButton.enabled = false
-      
-      activityIndicator.frame = activityIndicatorFrame
-      view.addSubview(activityIndicator)
-      activityIndicator.startAnimating()
-      
-      // Download API JSON image paths
-      FlickrClient.sharedInstance.fetchPhotoPaths(pin) { paths, availablePages, errorString in
-         
-         guard errorString == nil else {
-            self.showAlert(errorString!)
-            return
-         }
-         
-         // Create Photos from flickr API JSON image paths
-         
-         // We are not on the main thread, but no need to create a private context (blocking UI is OK)
-         self.sharedContext.performBlock {
-            
-            self.pin.availablePages = availablePages!
-            
-            let _ = paths!.map { (path) -> Photo in
-               Photo(filePath: path, pin: self.pin, context: self.sharedContext)
-            }
-            CoreDataStackManager.sharedInstance.saveContext()
-         }
-         
-         dispatch_async(dispatch_get_main_queue()) {
-            self.activityIndicator.stopAnimating()
-            self.removeRefreshButton.enabled = true
-//            self.collectionView.reloadData()
-//            self.collectionView.setContentOffset(CGPoint.zero, animated: true)
-         }
-      }
    
-   }
    
    func setUpMap() {
       let mapCenter = pin.coordinate
@@ -155,34 +118,33 @@ class PhotosViewController:   UIViewController,
       if let imageData = fileManager.contentsAtPath(filePath) { // Image already downloaded
          cell.imageView.image = UIImage(data: imageData)
          
-      } else {  // Download image
+//      } else {  // Download image
          
-         cell.activityIndicator.startAnimating()
+//         cell.activityIndicator.startAnimating()
          
-         let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
-            
-            guard errorString == nil else {
-               if errorString != "cancelled" {  // we will get this error frequently during cell reuse
-                  self.showAlert(errorString!)
-               }
-               return
-            }
-            
-            let image = UIImage(data: imageData!)!
-            
-            dispatch_async(dispatch_get_main_queue()) {
-               cell.activityIndicator.stopAnimating()
-               cell.imageView.image = image
-            }
-            
-            let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
-            imageToBeSaved.writeToFile(filePath, atomically: true)
+//         let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
+         
+//            guard errorString == nil else {
+//               if errorString != "cancelled" {  // we will get this error frequently during cell reuse
+//                  self.showAlert(errorString!)
+//               }
+//               return
+//            }
+         
+         
+//            dispatch_async(dispatch_get_main_queue()) {
+//               cell.activityIndicator.stopAnimating()
+//               cell.imageView.image = image
+//            }
+//            
+//            let image = UIImage(data: imageData!)!
+//            let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
+//            imageToBeSaved.writeToFile(filePath, atomically: true)
          }
          
          // This download should be cancelled if this cell is reused
-         cell.taskToCancelifCellIsReused = imageTask
+//         cell.taskToCancelifCellIsReused = imageTask
       }
-   }
    
    // Dual-mode button:  Remove photos or Refresh collection
    @IBAction func removeOrRefreshButton(sender: AnyObject) {
@@ -196,7 +158,7 @@ class PhotosViewController:   UIViewController,
          
          indexesSelected = [NSIndexPath]()
          
-         CoreDataStackManager.sharedInstance.saveContext()
+         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
          
          removeMode = false
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
@@ -208,9 +170,9 @@ class PhotosViewController:   UIViewController,
             sharedContext.deleteObject(photo)
          }
          
-         CoreDataStackManager.sharedInstance.saveContext()
+         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
          
-         getNewPhotos()
+//         getNewPhotos()
       }
    }
   
@@ -243,7 +205,8 @@ class PhotosViewController:   UIViewController,
          return cell
       }
       
-      let photo = pin.photos[indexPath.item]
+//      let photo = pin.photos[indexPath.item]
+      let photo = frc.objectAtIndexPath(indexPath) as! Photo
       
       if let indexesForDeletion = collectionView.indexPathsForSelectedItems() {
          if indexesForDeletion.contains(indexPath) {
@@ -265,6 +228,9 @@ class PhotosViewController:   UIViewController,
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
       cell.imageView.alpha = cellDimAlpha
       indexesSelected.append(indexPath)
+      
+      let photo = frc.objectAtIndexPath(indexPath) as! Photo
+      photo.fileName = ""
    }
    
    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
@@ -298,6 +264,7 @@ class PhotosViewController:   UIViewController,
       case .Delete:
          indexesToBeDeleted.append(indexPath!)
       case .Update:
+         print(".Update in didChangeObject")
          indexesToBeUpdated.append(indexPath!)
       default:
          return
