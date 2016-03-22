@@ -83,20 +83,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       switch longPressRecognizer.state {
          
       case .Began:
-         print("began")
          droppedPin = Pin(location: mapCoordinate, context: sharedContext)
          mapView.addAnnotation(droppedPin)
          
       case .Changed:
-         print("changed")
          droppedPin.coordinate = mapCoordinate
          
       case .Ended:
-         print("ended")
          CoreDataStackManager.sharedInstance.saveContext()
          
       default:
-         print("default")
          return
       }
    }
@@ -149,7 +145,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    // Persist map zoom and center in user defaults
    func saveCurrentMapRegion() {
       if let regionToBeSaved = savedRegion {
-         print("save")
          regionToBeSaved.region = mapView.region
          CoreDataStackManager.sharedInstance.saveContext()
       }

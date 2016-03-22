@@ -12,12 +12,14 @@ import CoreData
 import Foundation
 
 class PhotosViewController:   UIViewController,
-                              UICollectionViewDataSource, UICollectionViewDelegate {
+                              UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
    
    @IBOutlet weak var stackView: UIStackView!
    @IBOutlet weak var mapView: MKMapView!
    @IBOutlet weak var collectionView: UICollectionView!
    @IBOutlet weak var removeRefreshButton: UIButton!
+   
+   // the fetched results controller computed property is at end of file
    
    var pin: Pin!
    let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
@@ -34,6 +36,24 @@ class PhotosViewController:   UIViewController,
       return frame
    }
    
+   lazy var frc: NSFetchedResultsController = {
+      
+      let fetchRequest = NSFetchRequest(entityName: "Photo")
+      fetchRequest.predicate = NSPredicate(format: "pin == %@", self.pin!)
+      fetchRequest.sortDescriptors = []
+      
+      let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+      frc.delegate = self
+      return frc
+   }()
+   
+   var indexesToBeInserted = [NSIndexPath]()
+   var indexesToBeDeleted = [NSIndexPath]()
+   var indexesToBeUpdated = [NSIndexPath]()
+   var indexesSelected = [NSIndexPath]()
+   
+   // MARK:  View Lifecycle
+   
    override func viewDidLoad() {
       super.viewDidLoad()
       
@@ -45,6 +65,12 @@ class PhotosViewController:   UIViewController,
       layout.minimumInteritemSpacing = 0
       layout.minimumLineSpacing = 0
       collectionView.collectionViewLayout = layout
+      
+      do {
+         try frc.performFetch()
+      } catch let error as NSError {
+         print(error)
+      }
    }
    
    override func viewWillAppear(animated: Bool) {
@@ -60,8 +86,8 @@ class PhotosViewController:   UIViewController,
    // getNewPhotos needs frame of collection view for activity indicator, not available until after didAppear
    override func viewDidAppear(animated: Bool) {
       super.viewDidAppear(animated)
-      
-      if pin.photos.isEmpty {
+
+      if frc.sections![0].numberOfObjects == 0 {
          getNewPhotos()
       }
    }
@@ -73,6 +99,8 @@ class PhotosViewController:   UIViewController,
       }
       
    }
+   
+   // MARK:  Main functions
    
    func getNewPhotos() {
       
@@ -100,17 +128,17 @@ class PhotosViewController:   UIViewController,
             let _ = paths!.map { (path) -> Photo in
                Photo(filePath: path, pin: self.pin, context: self.sharedContext)
             }
-            
             CoreDataStackManager.sharedInstance.saveContext()
          }
          
          dispatch_async(dispatch_get_main_queue()) {
             self.activityIndicator.stopAnimating()
             self.removeRefreshButton.enabled = true
-            self.collectionView.reloadData()
-            self.collectionView.setContentOffset(CGPoint.zero, animated: true)
+//            self.collectionView.reloadData()
+//            self.collectionView.setContentOffset(CGPoint.zero, animated: true)
          }
       }
+   
    }
    
    func setUpMap() {
@@ -118,62 +146,6 @@ class PhotosViewController:   UIViewController,
       let span = MKCoordinateSpanMake(0.7, 0.7)
       mapView.region = MKCoordinateRegion(center: mapCenter, span: span)
       mapView.addAnnotation(pin)
-   }
-   
-   // Dual-mode button:  Remove photos or Refresh collection
-   @IBAction func removeOrRefreshButton(sender: AnyObject) {
-      
-      if removeMode {
-         
-         let indexesForDeletion = collectionView.indexPathsForSelectedItems()!
-         
-         for index in indexesForDeletion {
-            sharedContext.deleteObject(pin.photos[index.item])
-         }
-         
-         CoreDataStackManager.sharedInstance.saveContext()
-         
-         collectionView.deleteItemsAtIndexPaths(indexesForDeletion)
-         
-         removeMode = false
-         removeRefreshButton.setTitle("New Collection", forState: .Normal)
-         
-      } else { // New Collection
-         
-         // Delete all photos and get new ones
-         for photo in pin.photos {
-            sharedContext.deleteObject(photo)
-         }
-         CoreDataStackManager.sharedInstance.saveContext()
-         getNewPhotos()
-      }
-   }
-   
-   func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-      return pin.photos.count
-   }
-   
-   func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-      
-      let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
-      
-      // Protect against fetching new collection while still scrolling due to momentum
-      guard !pin.photos.isEmpty else {
-         return cell
-      }
-      
-      let photo = pin.photos[indexPath.item]
-      
-      if let indexesForDeletion = collectionView.indexPathsForSelectedItems() {
-         if indexesForDeletion.contains(indexPath) {
-            cell.imageView.alpha = cellDimAlpha
-         } else {
-            cell.imageView.alpha = 1.0
-         }
-      }
-      
-      configureCell(cell, photo: photo)
-      return cell
    }
    
    func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
@@ -212,28 +184,36 @@ class PhotosViewController:   UIViewController,
       }
    }
    
-   func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+   // Dual-mode button:  Remove photos or Refresh collection
+   @IBAction func removeOrRefreshButton(sender: AnyObject) {
       
-      removeMode = true
-      removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
-      
-      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-      cell.imageView.alpha = cellDimAlpha
-   }
-   
-   func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
-      
-      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-
-      cell.imageView.alpha = 1.0
-      
-      // If this was the last cell to be deselected, get out of remove mode
-      if collectionView.indexPathsForSelectedItems()!.isEmpty {
+      if removeMode {
+         
+         for indexPath in indexesSelected {
+            let photo = frc.objectAtIndexPath(indexPath) as! Photo
+            sharedContext.deleteObject(photo)
+         }
+         
+         indexesSelected = [NSIndexPath]()
+         
+         CoreDataStackManager.sharedInstance.saveContext()
+         
          removeMode = false
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
+         
+      } else { // New Collection
+         
+         // Delete all photos and get new ones
+         for photo in frc.fetchedObjects as! [Photo] {
+            sharedContext.deleteObject(photo)
+         }
+         
+         CoreDataStackManager.sharedInstance.saveContext()
+         
+         getNewPhotos()
       }
    }
-   
+  
    func showAlert(errorString: String) {
       
       let alertController = UIAlertController(title: "Alert", message: errorString, preferredStyle: .Alert)
@@ -245,5 +225,100 @@ class PhotosViewController:   UIViewController,
          self.removeRefreshButton.enabled = true
          self.presentViewController(alertController, animated: true, completion: nil)
       }
+   }
+   
+   // MARK: Collection View Delegate & DataSource
+   
+   func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+      let numItemsInSection = frc.sections![0].numberOfObjects
+      return numItemsInSection
+   }
+   
+   func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+      
+      let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
+      
+      // Protect against fetching new collection while still scrolling due to momentum
+      guard !pin.photos.isEmpty else {
+         return cell
+      }
+      
+      let photo = pin.photos[indexPath.item]
+      
+      if let indexesForDeletion = collectionView.indexPathsForSelectedItems() {
+         if indexesForDeletion.contains(indexPath) {
+            cell.imageView.alpha = cellDimAlpha
+         } else {
+            cell.imageView.alpha = 1.0
+         }
+      }
+      
+      configureCell(cell, photo: photo)
+      return cell
+   }
+   
+   func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+      
+      removeMode = true
+      removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
+      
+      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+      cell.imageView.alpha = cellDimAlpha
+      indexesSelected.append(indexPath)
+   }
+   
+   func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
+      
+      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+
+      cell.imageView.alpha = 1.0
+      indexesSelected.removeAtIndex(indexesSelected.indexOf(indexPath)!)
+      
+      // If this was the last cell to be deselected, get out of remove mode
+      if indexesSelected.isEmpty {
+         removeMode = false
+         removeRefreshButton.setTitle("New Collection", forState: .Normal)
+      }
+   }
+  
+   // MARK: - Fetched Results Controller Delegate (lovingly inspired by ColorCollection)
+   
+   func controllerWillChangeContent(controller: NSFetchedResultsController) {
+      indexesToBeInserted = [NSIndexPath]()
+      indexesToBeDeleted = [NSIndexPath]()
+      indexesToBeUpdated = [NSIndexPath]()
+   }
+   
+   func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+      
+      switch type {
+         
+      case .Insert:
+         indexesToBeInserted.append(newIndexPath!)
+      case .Delete:
+         indexesToBeDeleted.append(indexPath!)
+      case .Update:
+         indexesToBeUpdated.append(indexPath!)
+      default:
+         return
+      }
+   }
+   
+   func controllerDidChangeContent(controller: NSFetchedResultsController) {
+      
+      let batchUpdates = { () -> Void in
+         
+         for indexPath in self.indexesToBeInserted {
+            self.collectionView.insertItemsAtIndexPaths([indexPath])
+         }
+         for indexPath in self.indexesToBeDeleted {
+            self.collectionView.deleteItemsAtIndexPaths([indexPath])
+         }
+         for indexPath in self.indexesToBeUpdated {
+            self.collectionView.reloadItemsAtIndexPaths([indexPath])
+         }
+      }
+      
+      collectionView.performBatchUpdates(batchUpdates, completion: nil)
    }
 }
