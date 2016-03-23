@@ -49,38 +49,7 @@ class Pin: NSManagedObject, MKAnnotation {
       longitude = location.longitude
       
       availablePages = 1 // updates on subsequent calls to flickr API
-      print(availablePages)
    }
    
-   func fetchPhotos() {
-      
-      // Download API JSON image paths
-      FlickrClient.sharedInstance.fetchPhotoPaths(self) { imageURLs, pagesAvailable, errorString in
-         
-         guard errorString == nil else {
-            //            self.showAlert(errorString!)
-            return
-         }
-         
-         // Create Photos from flickr API JSON image paths
-         
-         let privateMOC = CoreDataStackManager.sharedInstance.createPrivateMOC()
-         
-         let myself = privateMOC.objectWithID(self.objectID) as! Pin
-         myself.availablePages = pagesAvailable!
-         
-         let _ = imageURLs!.map { (imageURL) -> Photo in
-            let photo = Photo(imageURL: imageURL, pin: self, context: privateMOC)
-            photo.downloadImage()
-         }
-         
-         CoreDataStackManager.sharedInstance.saveContext(privateMOC)
-      }
-      
-      //         dispatch_async(dispatch_get_main_queue()) {
-      //            self.activityIndicator.stopAnimating()
-      //            self.removeRefreshButton.enabled = true
-      //            self.collectionView.reloadData()
-      //            self.collectionView.setContentOffset(CGPoint.zero, animated: true)
-   }
+ 
 }

@@ -12,17 +12,16 @@ import CoreData
 import Foundation
 
 class PhotosViewController:   UIViewController,
-                              UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
+   UICollectionViewDataSource, UICollectionViewDelegate,
+NSFetchedResultsControllerDelegate {
    
    @IBOutlet weak var stackView: UIStackView!
    @IBOutlet weak var mapView: MKMapView!
    @IBOutlet weak var collectionView: UICollectionView!
    @IBOutlet weak var removeRefreshButton: UIButton!
    
-   // the fetched results controller computed property is at end of file
-   
    var pin: Pin!
-   let sharedContext = CoreDataStackManager.sharedInstance.managedObjectContext
+   let mainContext = CoreDataStackManager.sharedInstance.managedObjectContext
    lazy var fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
    lazy var fileManager = NSFileManager.defaultManager()
    var activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .WhiteLarge)
@@ -42,7 +41,7 @@ class PhotosViewController:   UIViewController,
       fetchRequest.predicate = NSPredicate(format: "pin == %@", self.pin!)
       fetchRequest.sortDescriptors = []
       
-      let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+      let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.mainContext, sectionNameKeyPath: nil, cacheName: nil)
       frc.delegate = self
       return frc
    }()
@@ -86,9 +85,11 @@ class PhotosViewController:   UIViewController,
    // getNewPhotos needs frame of collection view for activity indicator, not available until after didAppear
    override func viewDidAppear(animated: Bool) {
       super.viewDidAppear(animated)
-
-      if frc.sections![0].numberOfObjects == 0 {
-//         getNewPhotos()
+      
+      let numObjects = frc.sections![0].numberOfObjects
+      print("frc numObjects = \(numObjects)")
+      if numObjects == 0 {
+         //         getNewPhotos()
       }
    }
    
@@ -113,38 +114,20 @@ class PhotosViewController:   UIViewController,
    
    func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
       
-      let filePath = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
-      
-      if let imageData = fileManager.contentsAtPath(filePath) { // Image already downloaded
-         cell.imageView.image = UIImage(data: imageData)
+      // photo.filename is not nil if image successfully downloaded
+      if let fileName = photo.fileName {
          
-//      } else {  // Download image
+         let filePath = fileDirectory.URLByAppendingPathComponent(fileName).path!
          
-//         cell.activityIndicator.startAnimating()
-         
-//         let imageTask = FlickrClient.sharedInstance.imageDownloadTask(photo.filePath) { imageData, errorString in
-         
-//            guard errorString == nil else {
-//               if errorString != "cancelled" {  // we will get this error frequently during cell reuse
-//                  self.showAlert(errorString!)
-//               }
-//               return
-//            }
-         
-         
-//            dispatch_async(dispatch_get_main_queue()) {
-//               cell.activityIndicator.stopAnimating()
-//               cell.imageView.image = image
-//            }
-//            
-//            let image = UIImage(data: imageData!)!
-//            let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
-//            imageToBeSaved.writeToFile(filePath, atomically: true)
+         if let imageData = fileManager.contentsAtPath(filePath) {
+            cell.imageView.image = UIImage(data: imageData)
          }
          
-         // This download should be cancelled if this cell is reused
-//         cell.taskToCancelifCellIsReused = imageTask
+      } else {  // Wait for download
+         
+         //         cell.activityIndicator.startAnimating()
       }
+   }
    
    // Dual-mode button:  Remove photos or Refresh collection
    @IBAction func removeOrRefreshButton(sender: AnyObject) {
@@ -153,12 +136,12 @@ class PhotosViewController:   UIViewController,
          
          for indexPath in indexesSelected {
             let photo = frc.objectAtIndexPath(indexPath) as! Photo
-            sharedContext.deleteObject(photo)
+            mainContext.deleteObject(photo)
          }
          
          indexesSelected = [NSIndexPath]()
          
-         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
+         CoreDataStackManager.sharedInstance.saveContext(mainContext)
          
          removeMode = false
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
@@ -167,15 +150,15 @@ class PhotosViewController:   UIViewController,
          
          // Delete all photos and get new ones
          for photo in frc.fetchedObjects as! [Photo] {
-            sharedContext.deleteObject(photo)
+            mainContext.deleteObject(photo)
          }
          
-         CoreDataStackManager.sharedInstance.saveContext(sharedContext)
+         CoreDataStackManager.sharedInstance.saveContext(mainContext)
          
-//         getNewPhotos()
+         //         getNewPhotos()
       }
    }
-  
+   
    func showAlert(errorString: String) {
       
       let alertController = UIAlertController(title: "Alert", message: errorString, preferredStyle: .Alert)
@@ -193,10 +176,12 @@ class PhotosViewController:   UIViewController,
    
    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
       let numItemsInSection = frc.sections![0].numberOfObjects
+      print(numItemsInSection)
       return numItemsInSection
    }
    
    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+      print("cellforitem at: \(indexPath.item)")
       
       let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
       
@@ -205,7 +190,6 @@ class PhotosViewController:   UIViewController,
          return cell
       }
       
-//      let photo = pin.photos[indexPath.item]
       let photo = frc.objectAtIndexPath(indexPath) as! Photo
       
       if let indexesForDeletion = collectionView.indexPathsForSelectedItems() {
@@ -236,7 +220,7 @@ class PhotosViewController:   UIViewController,
    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-
+      
       cell.imageView.alpha = 1.0
       indexesSelected.removeAtIndex(indexesSelected.indexOf(indexPath)!)
       
@@ -246,7 +230,7 @@ class PhotosViewController:   UIViewController,
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
       }
    }
-  
+   
    // MARK: - Fetched Results Controller Delegate (lovingly inspired by ColorCollection)
    
    func controllerWillChangeContent(controller: NSFetchedResultsController) {
@@ -257,11 +241,14 @@ class PhotosViewController:   UIViewController,
    
    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
       
+      print("didChangeObject:")
       switch type {
          
       case .Insert:
+         print(".Insert")
          indexesToBeInserted.append(newIndexPath!)
       case .Delete:
+         print(".Delete")
          indexesToBeDeleted.append(indexPath!)
       case .Update:
          print(".Update in didChangeObject")

@@ -13,8 +13,8 @@ import CoreData
 class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
-   let photoLimit = 1000 
-   let photosPerPage = 10
+   let photoLimit = 1000
+   let photosPerPage = 2
    
    var maxPage: Int {
       return photoLimit / photosPerPage
@@ -43,7 +43,6 @@ class FlickrClient {
       
       // API arguments from parameters property above
       let urlString = baseURL + "?" + parameters.joinWithSeparator("&")
-      
       let request = NSMutableURLRequest(URL: NSURL(string: urlString)!)
       
       let task = urlSession.dataTaskWithRequest(request) { data, response, error in
@@ -74,32 +73,53 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-         print(imageURLs)
+         print("imageURL count = \(imageURLs.count)")
+         
          completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
       }
       
       task.resume()
    }
    
-   func downloadImage(imageURL: String, completion: (fileName: String) -> Void) {
+   func downloadImages(iPin: Pin) {
       
-      let request = NSURLRequest(URL: NSURL(string: imageURL)!)
-      let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+      let downloadImageMOC = CoreDataStackManager.sharedInstance.createPrivateMOC()
+      
+      downloadImageMOC.performBlockAndWait() {
          
-         guard error == nil else {
-            //            completionHandler(imageData: nil, errorString: error!.localizedDescription)
-            return
+         let pin = downloadImageMOC.objectWithID(iPin.objectID) as! Pin
+         
+         print("photos count:")
+         print(pin.photos.count)
+         
+         for photo in pin.photos {
+            
+            let url = NSURL(string: photo.imageURL)
+            let request = NSURLRequest(URL: url!)
+            
+            let task = self.urlSession.dataTaskWithRequest(request) { data, response, error in
+               
+               guard error == nil else {
+                  //            completionHandler(imageData: nil, errorString: error!.localizedDescription)
+                  return
+               }
+               
+               let fileName = url!.lastPathComponent!
+               let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+               let filePath = fileDirectory.URLByAppendingPathComponent(fileName)
+               
+               let image = UIImage(data: data!)!
+               let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
+               imageToBeSaved.writeToFile(filePath.path!, atomically: true)
+               
+               downloadImageMOC.performBlockAndWait() {
+                  photo.fileName = fileName
+                  print("set filename")
+                  CoreDataStackManager.sharedInstance.saveContext(downloadImageMOC)
+               }
+            }
+            task.resume()
          }
-         
-         let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
-         let fileName = fileDirectory.URLByAppendingPathComponent(photo.fileName).path!
-         
-         //         completionHandler(imageData: data, errorString: nil)
-         let image = UIImage(data: data!)!
-         let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
-         imageToBeSaved.writeToFile(filePath, atomically: true)
       }
-      
-      task.resume()
    }
 }
