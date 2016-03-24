@@ -59,7 +59,7 @@ NSFetchedResultsControllerDelegate {
       activityIndicator.backgroundColor = UIColor.blueColor()
       activityIndicator.alpha = 0.8
       
-      collectionView.allowsMultipleSelection = true
+//      collectionView.allowsMultipleSelection = true
       collectionView.dataSource = self
       collectionView.delegate = self
       
@@ -111,11 +111,15 @@ NSFetchedResultsControllerDelegate {
       mapView.addAnnotation(pin)
    }
    
-   func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
+   func configureCell(cell: PhotoCollectionViewCell, atIndexPath indexPath: NSIndexPath) {
       
-      if !NSThread.isMainThread() {
-         print("*** NOT MAIN THREAD ***")
+      if let _ = indexesSelected.indexOf(indexPath) {
+         cell.alpha = cellDimAlpha
+      } else {
+         cell.alpha = 1.0
       }
+      
+      let photo = frc.objectAtIndexPath(indexPath) as! Photo
       
       // photo.filename is not nil if image successfully downloaded
       if let fileName = photo.fileName {
@@ -192,55 +196,59 @@ NSFetchedResultsControllerDelegate {
       let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
       
       // Protect against fetching new collection while still scrolling due to momentum
-      guard !pin.photos.isEmpty else {
-         return cell
-      }
+//      guard !pin.photos.isEmpty else {
+//         return cell
+//      }
       
       let photo = frc.objectAtIndexPath(indexPath) as! Photo
       
-      if let indexesForDeletion = collectionView.indexPathsForSelectedItems() {
-         if indexesForDeletion.contains(indexPath) {
-            cell.imageView.alpha = cellDimAlpha
-         } else {
-            cell.imageView.alpha = 1.0
-         }
-      }
-      
-      print("\(indexPath.item + 1): ", terminator: "")
-      print(photo.objectID)
-      
-      configureCell(cell, photo: photo)
+      configureCell(cell, atIndexPath: indexPath)
       return cell
    }
    
+   var count = 0
    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
       
-      removeMode = true
-      removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
-      
-      indexesSelected.append(indexPath)
-      
-//      print(indexPath.item)
-      
-      let photo = frc.objectAtIndexPath(indexPath) as! Photo
-      ///
-      photo.fileName = ""
-   }
-   
-   func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
       
-      cell.imageView.alpha = 1.0
-      indexesSelected.removeAtIndex(indexesSelected.indexOf(indexPath)!)
+      if let index = indexesSelected.indexOf(indexPath) {
+         indexesSelected.removeAtIndex(index)
+      } else {
+         indexesSelected.append(indexPath)
+      }
       
-      // If this was the last cell to be deselected, get out of remove mode
+      let photo = frc.objectAtIndexPath(indexPath) as! Photo
+      
+      configureCell(cell, atIndexPath: indexPath)
+      
+      updateRefreshButton()
+   }
+   
+   func updateRefreshButton() {
       if indexesSelected.isEmpty {
          removeMode = false
          removeRefreshButton.setTitle("New Collection", forState: .Normal)
+      } else {
+         removeMode = true
+         removeRefreshButton.setTitle("Remove", forState: .Normal)
       }
    }
    
+//   func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
+//      
+//      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+//      
+//      cell.imageView.alpha = 1.0
+//      indexesSelected.removeAtIndex(indexesSelected.indexOf(indexPath)!)
+//      
+//      // If this was the last cell to be deselected, get out of remove mode
+//      if indexesSelected.isEmpty {
+//         removeMode = false
+//         removeRefreshButton.setTitle("New Collection", forState: .Normal)
+//      }
+//   }
+//   
    // MARK: - Fetched Results Controller Delegate (lovingly inspired by ColorCollection)
    
    func controllerWillChangeContent(controller: NSFetchedResultsController) {
