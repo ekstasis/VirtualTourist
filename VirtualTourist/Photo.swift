@@ -25,9 +25,6 @@ class Photo: NSManagedObject {
         
         self.imageURL = imageURL
         self.pin = pin
-        
-//        let url = NSURL(string: imageURL)!
-      
     }
    
     
@@ -35,11 +32,14 @@ class Photo: NSManagedObject {
         
         let fileManager = NSFileManager.defaultManager()
         let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
-        ///let fileToDelete = directory.URLByAppendingPathComponent(fileName)
-        
+        let fileToDelete = directory.URLByAppendingPathComponent(fileName!)
+      
         do {
-    ///        try fileManager.removeItemAtURL(fileToDelete)
+            try fileManager.removeItemAtURL(fileToDelete)
         } catch {
+         
+         ////////// think about this
+         let remember = 1
             // Photo never downloaded and saved due to (lack of) CollectionView scrolling.  No problem.
         }
     }

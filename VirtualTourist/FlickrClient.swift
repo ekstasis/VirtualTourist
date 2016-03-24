@@ -14,7 +14,7 @@ class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000
-   let photosPerPage = 2
+   let photosPerPage = 40
    
    var maxPage: Int {
       return photoLimit / photosPerPage
@@ -73,7 +73,7 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-         print("imageURL count = \(imageURLs.count)")
+//         print("imageURL count = \(imageURLs.count)")
          
          completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
       }
@@ -89,8 +89,8 @@ class FlickrClient {
          
          let pin = downloadImageMOC.objectWithID(iPin.objectID) as! Pin
          
-         print("photos count:")
-         print(pin.photos.count)
+//         print("photos count:")
+//         print(pin.photos.count)
          
          for photo in pin.photos {
             
@@ -114,7 +114,7 @@ class FlickrClient {
                
                downloadImageMOC.performBlockAndWait() {
                   photo.fileName = fileName
-                  print("set filename")
+//                  print("set filename")
                   CoreDataStackManager.sharedInstance.saveContext(downloadImageMOC)
                }
             }

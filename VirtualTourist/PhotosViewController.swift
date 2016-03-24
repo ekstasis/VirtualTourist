@@ -78,19 +78,9 @@ NSFetchedResultsControllerDelegate {
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       activityIndicator.backgroundColor = UIColor.blueColor()
       activityIndicator.alpha = 0.8
+      activityIndicator.startAnimating()
       
       setUpMap()
-   }
-   
-   // getNewPhotos needs frame of collection view for activity indicator, not available until after didAppear
-   override func viewDidAppear(animated: Bool) {
-      super.viewDidAppear(animated)
-      
-      let numObjects = frc.sections![0].numberOfObjects
-      print("frc numObjects = \(numObjects)")
-      if numObjects == 0 {
-         //         getNewPhotos()
-      }
    }
    
    // For activity indicator when rotating
@@ -114,6 +104,10 @@ NSFetchedResultsControllerDelegate {
    
    func configureCell(cell: PhotoCollectionViewCell, photo: Photo) {
       
+      if !NSThread.isMainThread() {
+         print("*** NOT MAIN THREAD ***")
+      }
+      
       // photo.filename is not nil if image successfully downloaded
       if let fileName = photo.fileName {
          
@@ -123,9 +117,9 @@ NSFetchedResultsControllerDelegate {
             cell.imageView.image = UIImage(data: imageData)
          }
          
-      } else {  // Wait for download
-         
-         //         cell.activityIndicator.startAnimating()
+         cell.activityIndicator.stopAnimating()
+      } else {
+         cell.activityIndicator.startAnimating()
       }
    }
    
@@ -176,12 +170,13 @@ NSFetchedResultsControllerDelegate {
    
    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
       let numItemsInSection = frc.sections![0].numberOfObjects
-      print(numItemsInSection)
+//      print(numItemsInSection)
       return numItemsInSection
    }
    
    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-      print("cellforitem at: \(indexPath.item)")
+      
+//      print("cellforitem at: \(indexPath.item)")
       
       let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
       
@@ -241,7 +236,7 @@ NSFetchedResultsControllerDelegate {
    
    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
       
-      print("didChangeObject:")
+      print("didChangeObject:", terminator: "")
       switch type {
          
       case .Insert:
@@ -251,7 +246,7 @@ NSFetchedResultsControllerDelegate {
          print(".Delete")
          indexesToBeDeleted.append(indexPath!)
       case .Update:
-         print(".Update in didChangeObject")
+         print(".Update \(indexPath)", terminator: "")
          indexesToBeUpdated.append(indexPath!)
       default:
          return
