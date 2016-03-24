@@ -84,6 +84,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       case .Ended:
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
          fetchPhotos()
+         let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+         photosVC.pin = droppedPin
+         navigationController?.pushViewController(photosVC, animated: true)
          
       default:
          return

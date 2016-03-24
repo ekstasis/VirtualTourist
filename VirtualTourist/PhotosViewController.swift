@@ -56,6 +56,9 @@ NSFetchedResultsControllerDelegate {
    override func viewDidLoad() {
       super.viewDidLoad()
       
+      activityIndicator.backgroundColor = UIColor.blueColor()
+      activityIndicator.alpha = 0.8
+      
       collectionView.allowsMultipleSelection = true
       collectionView.dataSource = self
       collectionView.delegate = self
@@ -75,25 +78,31 @@ NSFetchedResultsControllerDelegate {
    override func viewWillAppear(animated: Bool) {
       super.viewWillAppear(animated)
       
+      if frc.sections![0].numberOfObjects == 0 {
+         startActivityIndicator()
+      }
+   }
+   
+   override func viewDidAppear(animated: Bool) {
+      super.viewWillAppear(animated)
+      
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
-      activityIndicator.backgroundColor = UIColor.blueColor()
-      activityIndicator.alpha = 0.8
-      activityIndicator.startAnimating()
       
       setUpMap()
    }
    
-   // For activity indicator when rotating
-   override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
-      dispatch_async(dispatch_get_main_queue()) {
-         self.activityIndicator.frame = self.activityIndicatorFrame
-      }
-      
+   override func viewWillLayoutSubviews() {
+      super.viewWillLayoutSubviews()
+      activityIndicator.frame = activityIndicatorFrame
+   }
+   
+   func startActivityIndicator() {
+      activityIndicator.frame = activityIndicatorFrame
+      view.addSubview(activityIndicator)
+      activityIndicator.startAnimating()
    }
    
    // MARK:  Main functions
-   
-   
    
    func setUpMap() {
       let mapCenter = pin.coordinate
@@ -170,7 +179,9 @@ NSFetchedResultsControllerDelegate {
    
    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
       let numItemsInSection = frc.sections![0].numberOfObjects
-//      print(numItemsInSection)
+      if numItemsInSection != 0 {
+         activityIndicator.stopAnimating()
+      }
       return numItemsInSection
    }
    
@@ -195,6 +206,9 @@ NSFetchedResultsControllerDelegate {
          }
       }
       
+      print("\(indexPath.item + 1): ", terminator: "")
+      print(photo.objectID)
+      
       configureCell(cell, photo: photo)
       return cell
    }
@@ -204,11 +218,12 @@ NSFetchedResultsControllerDelegate {
       removeMode = true
       removeRefreshButton.setTitle("Remove Photos", forState: .Normal)
       
-      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-      cell.imageView.alpha = cellDimAlpha
       indexesSelected.append(indexPath)
       
+//      print(indexPath.item)
+      
       let photo = frc.objectAtIndexPath(indexPath) as! Photo
+      ///
       photo.fileName = ""
    }
    
@@ -236,17 +251,17 @@ NSFetchedResultsControllerDelegate {
    
    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
       
-      print("didChangeObject:", terminator: "")
+//      print("didChangeObject:", terminator: "")
       switch type {
          
       case .Insert:
-         print(".Insert")
+//         print(".Insert")
          indexesToBeInserted.append(newIndexPath!)
       case .Delete:
-         print(".Delete")
+//         print(".Delete")
          indexesToBeDeleted.append(indexPath!)
       case .Update:
-         print(".Update \(indexPath)", terminator: "")
+//         print(".Update \(indexPath)", terminator: "")
          indexesToBeUpdated.append(indexPath!)
       default:
          return
