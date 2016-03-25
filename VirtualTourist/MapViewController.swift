@@ -83,10 +83,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          
       case .Ended:
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
-         fetchPhotos()
-         let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
-         photosVC.pin = droppedPin
-         navigationController?.pushViewController(photosVC, animated: true)
+         FlickrClient.sharedInstance.fetchPhotos(droppedPin)
+         segueToAlbumView(droppedPin)
          
       default:
          return
@@ -116,10 +114,14 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          return
          
       } else { // Present photo collection
+         segueToAlbumView(pin)
+      }
+   }
+   
+   func segueToAlbumView(pin: Pin) {
          let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
          photosVC.pin = pin
          navigationController?.pushViewController(photosVC, animated: true)
-      }
    }
    
    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
@@ -146,42 +148,5 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       }
    }
    
-   func fetchPhotos() {
-      
-      //      let location = CLLocationCoordinate2D(latitude: droppedPin.latitude, longitude: droppedPin.longitude)
-      
-      //      let mainContextPin = Pin(location: location, context: mainContext)
-      //      CoreDataStackManager.sharedInstance.saveContext(mainContext)
-      
-      let privateMOC = CoreDataStackManager.sharedInstance.createPrivateMOC()
-      
-      privateMOC.performBlockAndWait() {
-         
-         let pin = privateMOC.objectWithID(self.droppedPin.objectID) as! Pin
-         
-         // Download API JSON image paths
-         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
-            
-            guard errorString == nil else {
-               //            self.showAlert(errorString!)
-               return
-            }
-            
-            // Create Photos from flickr API JSON image paths
-            privateMOC.performBlockAndWait() {
-               let photos = imageURLs!.map { (imageURL) -> Photo in
-                  let photo = Photo(imageURL: imageURL, pin: pin, context: privateMOC)
-                  return photo
-               }
-               print("created \(photos.count) photos")
-               
-            }
-            
-            CoreDataStackManager.sharedInstance.saveContext(privateMOC)
-            
-            // Downlaod images with client
-            FlickrClient.sharedInstance.downloadImages(pin)
-         }
-      }
-   }
+   
 }

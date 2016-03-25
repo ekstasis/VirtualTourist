@@ -10,37 +10,37 @@ import Foundation
 import CoreData
 
 class Photo: NSManagedObject {
-    
-    @NSManaged var pin: Pin
-    @NSManaged var imageURL: String
-    @NSManaged var fileName: String?
-    
-    override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
-        super.init(entity: entity, insertIntoManagedObjectContext: context)
-    }
-    
-    init(imageURL: String, pin: Pin, context: NSManagedObjectContext) {
-        let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)
-        super.init(entity: entity!, insertIntoManagedObjectContext: context)
-        
-        self.imageURL = imageURL
-        self.pin = pin
-    }
    
-    
-    override func prepareForDeletion() {
-        
-        let fileManager = NSFileManager.defaultManager()
-        let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
-        let fileToDelete = directory.URLByAppendingPathComponent(fileName!)
+   @NSManaged var pin: Pin
+   @NSManaged var imageURL: String
+   @NSManaged var fileName: String?
+   
+   override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
+      super.init(entity: entity, insertIntoManagedObjectContext: context)
+   }
+   
+   init(imageURL: String, pin: Pin, context: NSManagedObjectContext) {
+      let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)
+      super.init(entity: entity!, insertIntoManagedObjectContext: context)
       
-        do {
-            try fileManager.removeItemAtURL(fileToDelete)
-        } catch {
+      self.imageURL = imageURL
+      self.pin = pin
+   }
+   
+   
+   override func prepareForDeletion() {
+      
+      let fileManager = NSFileManager.defaultManager()
+      let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+      
+      if let file = fileName {
          
-         ////////// think about this
-         let remember = 1
-            // Photo never downloaded and saved due to (lack of) CollectionView scrolling.  No problem.
-        }
-    }
+         let fileToDelete = directory.URLByAppendingPathComponent(file)
+         do {
+            try fileManager.removeItemAtURL(fileToDelete)
+         } catch let error as NSError {
+            print(error)
+         }
+      }
+   }
 }

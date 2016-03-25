@@ -56,6 +56,10 @@ NSFetchedResultsControllerDelegate {
    override func viewDidLoad() {
       super.viewDidLoad()
       
+//      mainContext.shouldDeleteInaccessibleFaults = false
+      
+      NSNotificationCenter.defaultCenter().addObserver(self, selector: "noPhotoAlert", name: NoPhotosNotification, object: nil)
+      
       activityIndicator.backgroundColor = UIColor.blueColor()
       activityIndicator.alpha = 0.8
       
@@ -71,24 +75,18 @@ NSFetchedResultsControllerDelegate {
       do {
          try frc.performFetch()
       } catch let error as NSError {
-         print(error)
+         showAlert(error.localizedDescription)
       }
    }
    
    override func viewWillAppear(animated: Bool) {
       super.viewWillAppear(animated)
       
+      removeRefreshButton.setTitle("New Collection", forState: .Normal)
+      setUpMap()
       if frc.sections![0].numberOfObjects == 0 {
          startActivityIndicator()
       }
-   }
-   
-   override func viewDidAppear(animated: Bool) {
-      super.viewWillAppear(animated)
-      
-      removeRefreshButton.setTitle("New Collection", forState: .Normal)
-      
-      setUpMap()
    }
    
    override func viewWillLayoutSubviews() {
@@ -166,17 +164,24 @@ NSFetchedResultsControllerDelegate {
       }
    }
    
+   func noPhotoAlert() {
+      showAlert("There are no photos for this location")
+   }
+   
    func showAlert(errorString: String) {
       
-      let alertController = UIAlertController(title: "Alert", message: errorString, preferredStyle: .Alert)
-      let action = UIAlertAction(title: "OK", style: .Default, handler: nil)
+      let alertController = UIAlertController(title: "I'm Every So Sorry But . . .", message: errorString, preferredStyle: .Alert)
+      let action = UIAlertAction(title: "Forgive Me", style: .Default) { alert in
+         self.navigationController?.popViewControllerAnimated(true)
+      }
+      
       alertController.addAction(action)
       
-      dispatch_async(dispatch_get_main_queue()) {
+//      dispatch_async(dispatch_get_main_queue()) {
          self.activityIndicator.stopAnimating()
          self.removeRefreshButton.enabled = true
          self.presentViewController(alertController, animated: true, completion: nil)
-      }
+//      }
    }
    
    // MARK: Collection View Delegate & DataSource
@@ -191,16 +196,12 @@ NSFetchedResultsControllerDelegate {
    
    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
       
-//      print("cellforitem at: \(indexPath.item)")
-      
       let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
       
       // Protect against fetching new collection while still scrolling due to momentum
 //      guard !pin.photos.isEmpty else {
 //         return cell
 //      }
-      
-      let photo = frc.objectAtIndexPath(indexPath) as! Photo
       
       configureCell(cell, atIndexPath: indexPath)
       return cell
@@ -218,8 +219,6 @@ NSFetchedResultsControllerDelegate {
          indexesSelected.append(indexPath)
       }
       
-      let photo = frc.objectAtIndexPath(indexPath) as! Photo
-      
       configureCell(cell, atIndexPath: indexPath)
       
       updateRefreshButton()
@@ -234,22 +233,6 @@ NSFetchedResultsControllerDelegate {
          removeRefreshButton.setTitle("Remove", forState: .Normal)
       }
    }
-   
-//   func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
-//      
-//      let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
-//      
-//      cell.imageView.alpha = 1.0
-//      indexesSelected.removeAtIndex(indexesSelected.indexOf(indexPath)!)
-//      
-//      // If this was the last cell to be deselected, get out of remove mode
-//      if indexesSelected.isEmpty {
-//         removeMode = false
-//         removeRefreshButton.setTitle("New Collection", forState: .Normal)
-//      }
-//   }
-//   
-   // MARK: - Fetched Results Controller Delegate (lovingly inspired by ColorCollection)
    
    func controllerWillChangeContent(controller: NSFetchedResultsController) {
       indexesToBeInserted = [NSIndexPath]()
@@ -292,5 +275,6 @@ NSFetchedResultsControllerDelegate {
       }
       
       collectionView.performBatchUpdates(batchUpdates, completion: nil)
+//      print("finished batch update")
    }
 }

@@ -10,11 +10,14 @@ import Foundation
 import UIKit
 import CoreData
 
+// NSNotification name for locations with no photos
+let NoPhotosNotification = "NoPhotosNotification"
+
 class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000
-   let photosPerPage = 40
+   let photosPerPage = 100
    
    var maxPage: Int {
       return photoLimit / photosPerPage
@@ -60,9 +63,19 @@ class FlickrClient {
             completionHandler(imageURLs: nil, availablePages: nil, errorString: error.localizedDescription)
          }
          
+         
          let photosDict = json["photos"] as! [String : AnyObject]
          let photoArray = photosDict["photo"] as! [[String: AnyObject]]
          let numPages = photosDict["pages"] as! NSNumber
+         
+         guard !photoArray.isEmpty else {
+            let notificationCenter = NSNotificationCenter.defaultCenter()
+            dispatch_async(dispatch_get_main_queue()) {
+               notificationCenter.postNotificationName(NoPhotosNotification, object: nil)
+            }
+            completionHandler(imageURLs: nil, availablePages: nil, errorString: nil)
+            return
+         }
          
          // Generate flickr photo URLs from API JSON
          let imageURLs = photoArray.map { (dict) -> String in
@@ -73,7 +86,7 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-//         print("imageURL count = \(imageURLs.count)")
+         print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ imageURL count = \(imageURLs.count)")
          
          completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
       }
@@ -94,6 +107,8 @@ class FlickrClient {
          
          for photo in pin.photos {
             
+//            print(photo.fault)
+            
             let url = NSURL(string: photo.imageURL)
             let request = NSURLRequest(URL: url!)
             
@@ -110,15 +125,51 @@ class FlickrClient {
                
                let image = UIImage(data: data!)!
                let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
-               imageToBeSaved.writeToFile(filePath.path!, atomically: true)
                
-               downloadImageMOC.performBlockAndWait() {
-                  photo.fileName = fileName
-//                  print("set filename")
-                  CoreDataStackManager.sharedInstance.saveContext(downloadImageMOC)
+               if imageToBeSaved.writeToFile(filePath.path!, atomically: true) {
+                  downloadImageMOC.performBlockAndWait() {
+                     let parent = downloadImageMOC.parentContext
+                     photo.fileName = fileName
+                     CoreDataStackManager.sharedInstance.saveContext(downloadImageMOC)
+                  }
                }
             }
             task.resume()
+         }
+      }
+   }
+   
+   func fetchPhotos(pin: Pin) {
+      
+      let privateMOC = CoreDataStackManager.sharedInstance.createPrivateMOC()
+      
+      privateMOC.performBlockAndWait() {
+         
+         let pin = privateMOC.objectWithID(pin.objectID) as! Pin
+         
+         // Download API JSON image paths
+         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
+            
+            guard errorString == nil else {
+               //            self.showAlert(errorString!)
+               return
+            }
+            guard let _ = imageURLs else { return }
+            
+            // Create Photos from flickr API JSON image paths
+            privateMOC.performBlockAndWait() {
+               let photos = imageURLs!.map { (imageURL) -> Photo in
+                  let photo = Photo(imageURL: imageURL, pin: pin, context: privateMOC)
+                  return photo
+               }
+               print("created \(photos.count) photos")
+               
+            }
+            
+            CoreDataStackManager.sharedInstance.saveContext(privateMOC)
+            
+            // Downlaod images with client
+            FlickrClient.sharedInstance.downloadImages(pin)
          }
       }
    }
