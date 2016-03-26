@@ -28,7 +28,7 @@ NSFetchedResultsControllerDelegate {
    var removeMode = false
    let cellDimAlpha: CGFloat = 0.3
    
-   // placement of waiting indicator should cover the collection view in the stackView
+   // Placement of waiting indicator should cover the collection view in the stackView
    var activityIndicatorFrame: CGRect {
       var frame = stackView.arrangedSubviews[1].frame
       frame.origin.y += stackView.frame.origin.y
@@ -36,11 +36,9 @@ NSFetchedResultsControllerDelegate {
    }
    
    lazy var frc: NSFetchedResultsController = {
-      
       let fetchRequest = NSFetchRequest(entityName: "Photo")
       fetchRequest.predicate = NSPredicate(format: "pin == %@", self.pin!)
       fetchRequest.sortDescriptors = []
-      
       let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.mainContext, sectionNameKeyPath: nil, cacheName: nil)
       frc.delegate = self
       return frc
@@ -55,64 +53,59 @@ NSFetchedResultsControllerDelegate {
    
    override func viewDidLoad() {
       super.viewDidLoad()
-      let fileManager = NSFileManager.defaultManager()
-      let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
-      var contents = [String]()
-      do {
-         contents = try fileManager.contentsOfDirectoryAtPath(directory.path!)
-      } catch let error as NSError {
-         print(error.localizedDescription)
-      }
-      print("Number of images on disk \(contents.count - 3)")
       
-      NSNotificationCenter.defaultCenter().addObserver(self, selector: "noPhotoAlert", name: NoPhotosNotification, object: nil)
-      NSNotificationCenter.defaultCenter().addObserver(self, selector: "finishedDownloading", name: AllFilesWrittenNotification, object: nil)
-      
-      activityIndicator.backgroundColor = UIColor.blueColor()
-      activityIndicator.alpha = 0.8
+      setUpMap()
       
       collectionView.dataSource = self
       collectionView.delegate = self
-      
-      let layout = PhotoAlbumFlowLayout()
-      layout.minimumInteritemSpacing = 0
-      layout.minimumLineSpacing = 0
-      collectionView.collectionViewLayout = layout
       
       do {
          try frc.performFetch()
       } catch let error as NSError {
          showAlert(error.localizedDescription)
       }
+      
+      let layout = PhotoAlbumFlowLayout()
+      layout.minimumInteritemSpacing = 0
+      layout.minimumLineSpacing = 0
+      collectionView.collectionViewLayout = layout
+      
+      activityIndicator.backgroundColor = UIColor.blueColor()
+      activityIndicator.alpha = 0.8
+      
+      // Locations with no photos.  Will show an alert.
+      NSNotificationCenter.defaultCenter().addObserver(self, selector: "noPhotoAlert", name: NoPhotosNotification, object: nil)
+      // We need to know it's OK to delete Photos and not orphan image files
+      NSNotificationCenter.defaultCenter().addObserver(self, selector: "finishedDownloadingImages", name: AllFilesWrittenNotification, object: nil)
    }
    
-   func finishedDownloading() {
-      removeRefreshButton.enabled = true
-   }
+   // Called by notification to indicate it's OK to delete photos
    
    override func viewWillAppear(animated: Bool) {
       super.viewWillAppear(animated)
       
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
-      setUpMap()
+      
+      // Still downloading Flickr image URLs
       if frc.sections![0].numberOfObjects == 0 {
          removeRefreshButton.enabled = false
          startActivityIndicator()
       }
    }
    
+   // Activity Indicator resizing, eg for rotation
    override func viewWillLayoutSubviews() {
       super.viewWillLayoutSubviews()
       activityIndicator.frame = activityIndicatorFrame
    }
+   
+   // MARK:  Main functions
    
    func startActivityIndicator() {
       activityIndicator.frame = activityIndicatorFrame
       view.addSubview(activityIndicator)
       activityIndicator.startAnimating()
    }
-   
-   // MARK:  Main functions
    
    func setUpMap() {
       let mapCenter = pin.coordinate
@@ -121,8 +114,13 @@ NSFetchedResultsControllerDelegate {
       mapView.addAnnotation(pin)
    }
    
+   func finishedDownloadingImages() {
+      removeRefreshButton.enabled = true
+   }
+   
    func configureCell(cell: PhotoCollectionViewCell, atIndexPath indexPath: NSIndexPath) {
       
+      // Check if photo is marked for deletion
       if let _ = indexesSelected.indexOf(indexPath) {
          cell.alpha = cellDimAlpha
       } else {
@@ -131,52 +129,73 @@ NSFetchedResultsControllerDelegate {
       
       let photo = frc.objectAtIndexPath(indexPath) as! Photo
       
-      // photo.filename is not nil if image successfully downloaded
+      print("configureCell with Photo \(photo.objectID) at index \(indexPath.item)")
+      
+      // Do we have an image yet?  photo.filename is not nil if image successfully downloaded
       if let fileName = photo.fileName {
          
          let filePath = fileDirectory.URLByAppendingPathComponent(fileName).path!
          
          if let imageData = fileManager.contentsAtPath(filePath) {
             cell.imageView.image = UIImage(data: imageData)
+         } else {
+            print("Error: No image file at \(filePath)")
          }
          
          cell.activityIndicator.stopAnimating()
+         
       } else {
-         cell.activityIndicator.startAnimating()
+         cell.activityIndicator.startAnimating()  // Still downloading image
+      }
+   }
+   
+   func updateRefreshButton() {
+      
+      if indexesSelected.isEmpty {
+         removeMode = false
+         removeRefreshButton.setTitle("New Collection", forState: .Normal)
+      } else {
+         removeMode = true
+         removeRefreshButton.setTitle("Remove", forState: .Normal)
       }
    }
    
    // Dual-mode button:  Remove photos or Refresh collection
    @IBAction func removeOrRefreshButton(sender: AnyObject) {
-      
       if removeMode {
-         
-         for indexPath in indexesSelected {
-            let photo = frc.objectAtIndexPath(indexPath) as! Photo
-            mainContext.deleteObject(photo)
-         }
-         
-         indexesSelected = [NSIndexPath]()
-         
-         CoreDataStackManager.sharedInstance.saveContext(mainContext)
-         
-         removeMode = false
-         removeRefreshButton.setTitle("New Collection", forState: .Normal)
-         
-      } else { // New Collection
-         
-         removeRefreshButton.enabled = false
-         
-         // Delete all photos and get new ones
-         for photo in frc.fetchedObjects as! [Photo] {
-            mainContext.deleteObject(photo)
-         }
-         
-         CoreDataStackManager.sharedInstance.saveContext(mainContext)
-         
-         //         getNewPhotos()
-         removeRefreshButton.enabled = true
+         removePhotos()
+      } else {
+         newCollection()
       }
+   }
+   
+   func removePhotos() {
+      
+      for indexPath in indexesSelected {
+         let photo = frc.objectAtIndexPath(indexPath) as! Photo
+         mainContext.deleteObject(photo)
+      }
+      
+      CoreDataStackManager.sharedInstance.saveContext(mainContext)
+      
+      removeMode = false
+      removeRefreshButton.setTitle("New Collection", forState: .Normal)
+      indexesSelected = [NSIndexPath]()
+   }
+   
+   func newCollection() {
+      
+      removeRefreshButton.enabled = false
+      
+      for photo in frc.fetchedObjects as! [Photo] {
+         mainContext.deleteObject(photo)
+      }
+      
+      CoreDataStackManager.sharedInstance.saveContext(mainContext)
+      
+      let checkthis = 1
+      activityIndicator.startAnimating()
+      FlickrClient.sharedInstance.fetchPhotos(pin)
    }
    
    func noPhotoAlert() {
@@ -185,18 +204,17 @@ NSFetchedResultsControllerDelegate {
    
    func showAlert(errorString: String) {
       
+      self.activityIndicator.stopAnimating()
+      
       let alertController = UIAlertController(title: "I'm Every So Sorry But . . .", message: errorString, preferredStyle: .Alert)
       let action = UIAlertAction(title: "Forgive Me", style: .Default) { alert in
          self.navigationController?.popViewControllerAnimated(true)
       }
-      
       alertController.addAction(action)
       
-//      dispatch_async(dispatch_get_main_queue()) {
-         self.activityIndicator.stopAnimating()
-         self.removeRefreshButton.enabled = true
-         self.presentViewController(alertController, animated: true, completion: nil)
-//      }
+      let needsDispathMainQueue = 1
+      self.presentViewController(alertController, animated: true, completion: nil)
+//      self.removeRefreshButton.enabled = true
    }
    
    // MARK: Collection View Delegate & DataSource
@@ -210,21 +228,12 @@ NSFetchedResultsControllerDelegate {
    }
    
    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-      
       let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoCollectionViewCell
-      
-      // Protect against fetching new collection while still scrolling due to momentum
-//      guard !pin.photos.isEmpty else {
-//         return cell
-//      }
-      
       configureCell(cell, atIndexPath: indexPath)
       return cell
    }
    
-   var count = 0
    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-      
       
       let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
       
@@ -239,15 +248,7 @@ NSFetchedResultsControllerDelegate {
       updateRefreshButton()
    }
    
-   func updateRefreshButton() {
-      if indexesSelected.isEmpty {
-         removeMode = false
-         removeRefreshButton.setTitle("New Collection", forState: .Normal)
-      } else {
-         removeMode = true
-         removeRefreshButton.setTitle("Remove", forState: .Normal)
-      }
-   }
+   // MARK:  Fetched Results Controller Delegate
    
    func controllerWillChangeContent(controller: NSFetchedResultsController) {
       indexesToBeInserted = [NSIndexPath]()
@@ -258,9 +259,10 @@ NSFetchedResultsControllerDelegate {
    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
       
       switch type {
-         
       case .Insert:
          indexesToBeInserted.append(newIndexPath!)
+         let photo = anObject as! Photo
+         print(".Insert anObject: \(photo.objectID) at index \(newIndexPath!.item)")
       case .Delete:
          indexesToBeDeleted.append(indexPath!)
       case .Update:

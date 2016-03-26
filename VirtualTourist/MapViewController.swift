@@ -18,6 +18,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    var savedRegion: SavedRegion!
    let mainContext = CoreDataStackManager.sharedInstance.managedObjectContext
    
+   // MARK: View Controller Functions
+   
    override func viewDidLoad() {
       super.viewDidLoad()
       
@@ -28,10 +30,11 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       longPressRecognizer.minimumPressDuration = 1.0
       mapView.addGestureRecognizer(longPressRecognizer)
       getSavedRegion()
-      
    }
    
+   // Use persisted map region otherwise use iOS default
    override func viewWillLayoutSubviews() {
+      print("layout")
       if let region = savedRegion?.region {
          mapView.setRegion(region, animated: true)
       } else {
@@ -39,22 +42,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       }
    }
    
-   func getSavedRegion() {
-      
-      let fetchRequest = NSFetchRequest(entityName: "SavedRegion")
-      
-      do {
-         let savedRegions = try mainContext.executeFetchRequest(fetchRequest) as! [SavedRegion]
-         if !savedRegions.isEmpty {
-            savedRegion = savedRegions[0]
-         }
-         
-      } catch let error as NSError {
-         print(error)
-      }
-   }
+   // MARK: Main Functions
    
-   // Fetch pins from Core Data
    func populatePins() {
       
       let fetchRequest = NSFetchRequest(entityName: "Pin")
@@ -67,6 +56,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       }
    }
    
+   // Pin creation, dragging, prefetching, and auto segue to album view
    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
       
       let tapLocation = longPressRecognizer.locationInView(mapView)
@@ -91,16 +81,38 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       }
    }
    
-   // Continually persist map center
-   func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-      saveCurrentMapRegion()
+   func segueToAlbumView(pin: Pin) {
+      let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
+      photosVC.pin = pin
+      navigationController?.pushViewController(photosVC, animated: true)
    }
    
-   func mapViewDidFinishLoadingMap(mapView: MKMapView) {
-      populatePins()
+   // MARK: Region Saving and Loading
+   
+   // Called by mapView regionDidChange()
+   func saveCurrentMapRegion() {
+      if let regionToBeSaved = savedRegion {
+         regionToBeSaved.region = mapView.region
+         CoreDataStackManager.sharedInstance.saveContext(mainContext)
+      }
    }
    
-   // Handles pin deletion and transition to photo album depending on whether editing or not
+   func getSavedRegion() { // From Core Data on App Load
+      
+      let fetchRequest = NSFetchRequest(entityName: "SavedRegion")
+      do {
+         let savedRegions = try mainContext.executeFetchRequest(fetchRequest) as! [SavedRegion]
+         if !savedRegions.isEmpty {
+            savedRegion = savedRegions[0]
+         }
+      } catch let error as NSError {
+         print(error)
+      }
+   }
+   
+   // MARK: Map Delegate
+   
+   // Handles pin deletion or transition to photo album depending on whether editing or not
    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
       
       mapView.deselectAnnotation(view.annotation, animated: true)
@@ -116,12 +128,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       } else { // Present photo collection
          segueToAlbumView(pin)
       }
-   }
-   
-   func segueToAlbumView(pin: Pin) {
-         let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
-         photosVC.pin = pin
-         navigationController?.pushViewController(photosVC, animated: true)
    }
    
    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
@@ -140,13 +146,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       return annotationView
    }
    
-   // Persist map zoom and center in user defaults
-   func saveCurrentMapRegion() {
-      if let regionToBeSaved = savedRegion {
-         regionToBeSaved.region = mapView.region
-         CoreDataStackManager.sharedInstance.saveContext(mainContext)
-      }
+   // Saves current region to Core Data
+   func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+      print("save current region")
+         saveCurrentMapRegion()
    }
    
-   
+   func mapViewDidFinishLoadingMap(mapView: MKMapView) {
+      populatePins()
+   }
 }

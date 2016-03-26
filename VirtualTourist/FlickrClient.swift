@@ -18,7 +18,7 @@ class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000
-   let photosPerPage = 40
+   let photosPerPage = 4
    
    var maxPage: Int {
       return photoLimit / photosPerPage
@@ -168,6 +168,7 @@ class FlickrClient {
             privateMOC.performBlockAndWait() {
                let photos = imageURLs!.map { (imageURL) -> Photo in
                   let photo = Photo(imageURL: imageURL, pin: pin, context: privateMOC)
+                  print("created: \(photo.objectID)")
                   return photo
                }
                print("getPaths created \(photos.count) photos")
