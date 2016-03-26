@@ -55,15 +55,22 @@ NSFetchedResultsControllerDelegate {
    
    override func viewDidLoad() {
       super.viewDidLoad()
-      
-//      mainContext.shouldDeleteInaccessibleFaults = false
+      let fileManager = NSFileManager.defaultManager()
+      let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+      var contents = [String]()
+      do {
+         contents = try fileManager.contentsOfDirectoryAtPath(directory.path!)
+      } catch let error as NSError {
+         print(error.localizedDescription)
+      }
+      print("Number of images on disk \(contents.count - 3)")
       
       NSNotificationCenter.defaultCenter().addObserver(self, selector: "noPhotoAlert", name: NoPhotosNotification, object: nil)
+      NSNotificationCenter.defaultCenter().addObserver(self, selector: "finishedDownloading", name: AllFilesWrittenNotification, object: nil)
       
       activityIndicator.backgroundColor = UIColor.blueColor()
       activityIndicator.alpha = 0.8
       
-//      collectionView.allowsMultipleSelection = true
       collectionView.dataSource = self
       collectionView.delegate = self
       
@@ -79,12 +86,17 @@ NSFetchedResultsControllerDelegate {
       }
    }
    
+   func finishedDownloading() {
+      removeRefreshButton.enabled = true
+   }
+   
    override func viewWillAppear(animated: Bool) {
       super.viewWillAppear(animated)
       
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       setUpMap()
       if frc.sections![0].numberOfObjects == 0 {
+         removeRefreshButton.enabled = false
          startActivityIndicator()
       }
    }
@@ -153,6 +165,8 @@ NSFetchedResultsControllerDelegate {
          
       } else { // New Collection
          
+         removeRefreshButton.enabled = false
+         
          // Delete all photos and get new ones
          for photo in frc.fetchedObjects as! [Photo] {
             mainContext.deleteObject(photo)
@@ -161,6 +175,7 @@ NSFetchedResultsControllerDelegate {
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
          
          //         getNewPhotos()
+         removeRefreshButton.enabled = true
       }
    }
    
@@ -242,17 +257,13 @@ NSFetchedResultsControllerDelegate {
    
    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
       
-//      print("didChangeObject:", terminator: "")
       switch type {
          
       case .Insert:
-//         print(".Insert")
          indexesToBeInserted.append(newIndexPath!)
       case .Delete:
-//         print(".Delete")
          indexesToBeDeleted.append(indexPath!)
       case .Update:
-//         print(".Update \(indexPath)", terminator: "")
          indexesToBeUpdated.append(indexPath!)
       default:
          return
@@ -275,6 +286,5 @@ NSFetchedResultsControllerDelegate {
       }
       
       collectionView.performBatchUpdates(batchUpdates, completion: nil)
-//      print("finished batch update")
    }
 }

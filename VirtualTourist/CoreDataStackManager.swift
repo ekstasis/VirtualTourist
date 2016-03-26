@@ -69,7 +69,6 @@ class CoreDataStackManager {
    // MARK: - Core Data Saving support
    
    func saveContext(context: NSManagedObjectContext) {
-///      print("save context: \(context)")
       
       context.performBlockAndWait() {
          if context.hasChanges {

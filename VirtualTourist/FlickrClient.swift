@@ -12,15 +12,26 @@ import CoreData
 
 // NSNotification name for locations with no photos
 let NoPhotosNotification = "NoPhotosNotification"
+let AllFilesWrittenNotification = "AllFilesWrittenNotification"
 
 class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000
-   let photosPerPage = 100
+   let photosPerPage = 40
    
    var maxPage: Int {
       return photoLimit / photosPerPage
+   }
+   
+   var numImagesToDownload: Int! {
+      didSet {
+         if numImagesToDownload == 0 {
+            dispatch_async(dispatch_get_main_queue()) {
+               NSNotificationCenter.defaultCenter().postNotificationName(AllFilesWrittenNotification, object: nil)
+            }
+         }
+      }
    }
    
    static let sharedInstance = FlickrClient()
@@ -86,7 +97,6 @@ class FlickrClient {
             return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
          }
          
-         print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ imageURL count = \(imageURLs.count)")
          
          completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
       }
@@ -102,12 +112,9 @@ class FlickrClient {
          
          let pin = downloadImageMOC.objectWithID(iPin.objectID) as! Pin
          
-//         print("photos count:")
-//         print(pin.photos.count)
+         self.numImagesToDownload = pin.photos.count
          
          for photo in pin.photos {
-            
-//            print(photo.fault)
             
             let url = NSURL(string: photo.imageURL)
             let request = NSURLRequest(URL: url!)
@@ -127,11 +134,12 @@ class FlickrClient {
                let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
                
                if imageToBeSaved.writeToFile(filePath.path!, atomically: true) {
+                  let why = "why is this perform block necessary?"
                   downloadImageMOC.performBlockAndWait() {
-                     let parent = downloadImageMOC.parentContext
                      photo.fileName = fileName
                      CoreDataStackManager.sharedInstance.saveContext(downloadImageMOC)
                   }
+                  self.numImagesToDownload!--
                }
             }
             task.resume()
@@ -162,7 +170,7 @@ class FlickrClient {
                   let photo = Photo(imageURL: imageURL, pin: pin, context: privateMOC)
                   return photo
                }
-               print("created \(photos.count) photos")
+               print("getPaths created \(photos.count) photos")
                
             }
             
