@@ -103,7 +103,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Called by mapView regionDidChange()
    func saveCurrentMapRegion() {
-      print("save region")
+//      print("save region")
       if let regionToBeSaved = savedRegion {
          regionToBeSaved.region = mapView.region
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
