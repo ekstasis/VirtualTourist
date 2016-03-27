@@ -54,6 +54,7 @@ class FlickrClient {
       parameters.append("lon=\(pin.longitude)")
       parameters.append("per_page=\(photosPerPage)")
       parameters.append("page=\(pin.nextPage)")
+      print(pin.nextPage)
       
       // API arguments from parameters property above
       let urlString = baseURL + "?" + parameters.joinWithSeparator("&")
@@ -78,6 +79,10 @@ class FlickrClient {
          let photosDict = json["photos"] as! [String : AnyObject]
          let photoArray = photosDict["photo"] as! [[String: AnyObject]]
          let numPages = photosDict["pages"] as! NSNumber
+         
+         for photoDictionary in photoArray {
+            print(photoDictionary["id"] as! String)
+         }
          
          guard !photoArray.isEmpty else {
             let notificationCenter = NSNotificationCenter.defaultCenter()
@@ -162,16 +167,18 @@ class FlickrClient {
                //            self.showAlert(errorString!)
                return
             }
+            let x = 1 // why checking for imageURLs?
             guard let _ = imageURLs else { return }
             
             // Create Photos from flickr API JSON image paths
             privateMOC.performBlockAndWait() {
+               pin.availablePages = pagesAvailable!
                let photos = imageURLs!.map { (imageURL) -> Photo in
                   let photo = Photo(imageURL: imageURL, pin: pin, context: privateMOC)
-                  print("created: \(photo.objectID)")
+//                  print("created: \(photo.objectID)")
                   return photo
                }
-               print("getPaths created \(photos.count) photos")
+//               print("getPaths created \(photos.count) photos")
                
             }
             
