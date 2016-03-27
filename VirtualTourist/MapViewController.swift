@@ -34,7 +34,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Use persisted map region otherwise use iOS default
    override func viewWillLayoutSubviews() {
-      print("layout")
       if let region = savedRegion?.region {
          mapView.setRegion(region, animated: true)
       } else {
@@ -148,7 +147,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Saves current region to Core Data
    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-      print("save current region")
          saveCurrentMapRegion()
    }
    

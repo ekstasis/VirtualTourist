@@ -18,7 +18,7 @@ class FlickrClient {
    
    // flickr photo limit undocumented change from 4000 to ~2000?  To be safe:
    let photoLimit = 1000
-   let photosPerPage = 4
+   let photosPerPage = 40
    
    var maxPage: Int {
       return photoLimit / photosPerPage
@@ -48,13 +48,12 @@ class FlickrClient {
       "has_geo=1",
    ]
    
-   func fetchPhotoPaths(pin: Pin, completionHandler: (imageURLs: [String]?, availablePages: NSNumber?, errorString: String?) -> Void) {
+   func fetchPhotoPaths(pin: Pin, completionHandler: (imageURLs: [String]?, availablePages: NSNumber, errorString: String?) -> Void) {
       
       parameters.append("lat=\(pin.latitude)")
       parameters.append("lon=\(pin.longitude)")
       parameters.append("per_page=\(photosPerPage)")
       parameters.append("page=\(pin.nextPage)")
-      print(pin.nextPage)
       
       // API arguments from parameters property above
       let urlString = baseURL + "?" + parameters.joinWithSeparator("&")
@@ -63,7 +62,7 @@ class FlickrClient {
       let task = urlSession.dataTaskWithRequest(request) { data, response, error in
          
          guard error == nil else {
-            completionHandler(imageURLs: nil, availablePages: nil, errorString: error!.localizedDescription)
+            completionHandler(imageURLs: nil, availablePages: 0, errorString: error!.localizedDescription)
             return
          }
          
@@ -72,7 +71,7 @@ class FlickrClient {
          do {
             json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
          } catch let error as NSError {
-            completionHandler(imageURLs: nil, availablePages: nil, errorString: error.localizedDescription)
+            completionHandler(imageURLs: nil, availablePages: 0, errorString: error.localizedDescription)
          }
          
          
@@ -80,16 +79,12 @@ class FlickrClient {
          let photoArray = photosDict["photo"] as! [[String: AnyObject]]
          let numPages = photosDict["pages"] as! NSNumber
          
-         for photoDictionary in photoArray {
-            print(photoDictionary["id"] as! String)
-         }
-         
          guard !photoArray.isEmpty else {
             let notificationCenter = NSNotificationCenter.defaultCenter()
             dispatch_async(dispatch_get_main_queue()) {
                notificationCenter.postNotificationName(NoPhotosNotification, object: nil)
             }
-            completionHandler(imageURLs: nil, availablePages: nil, errorString: nil)
+            completionHandler(imageURLs: nil, availablePages: 0, errorString: nil)
             return
          }
          
@@ -139,7 +134,6 @@ class FlickrClient {
                let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
                
                if imageToBeSaved.writeToFile(filePath.path!, atomically: true) {
-                  let why = "why is this perform block necessary?"
                   downloadImageMOC.performBlockAndWait() {
                      photo.fileName = fileName
                      CoreDataStackManager.sharedInstance.saveContext(downloadImageMOC)
@@ -163,22 +157,22 @@ class FlickrClient {
          // Download API JSON image paths
          FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
             
+            let x = 1 // deal with error
             guard errorString == nil else {
                //            self.showAlert(errorString!)
                return
             }
-            let x = 1 // why checking for imageURLs?
-            guard let _ = imageURLs else { return }
-            
             // Create Photos from flickr API JSON image paths
             privateMOC.performBlockAndWait() {
-               pin.availablePages = pagesAvailable!
-               let photos = imageURLs!.map { (imageURL) -> Photo in
-                  let photo = Photo(imageURL: imageURL, pin: pin, context: privateMOC)
-//                  print("created: \(photo.objectID)")
-                  return photo
+               
+               pin.availablePages = pagesAvailable
+               
+               if let images = imageURLs {
+                  let _ = images.map { (imageURL) -> Photo in
+                     return Photo(imageURL: imageURL, pin: pin, context: privateMOC)
+                  }
                }
-//               print("getPaths created \(photos.count) photos")
+               //               print("getPaths created \(photos.count) photos")
                
             }
             

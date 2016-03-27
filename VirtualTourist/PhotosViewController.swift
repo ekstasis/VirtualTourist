@@ -86,10 +86,17 @@ NSFetchedResultsControllerDelegate {
       
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       
+      print("PVC.viewWillPpear pin.availablePages = \(pin.availablePages)")
+      
       // Still downloading Flickr image URLs
       if frc.sections![0].numberOfObjects == 0 {
          removeRefreshButton.enabled = false
          startActivityIndicator()
+         
+      }
+      
+      if pin.availablePages == 0 {
+         noPhotoAlert()
       }
    }
    
