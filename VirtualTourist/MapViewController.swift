@@ -34,6 +34,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Use persisted map region otherwise use iOS default
    override func viewWillLayoutSubviews() {
+      print("layout")
       if let region = savedRegion?.region {
          mapView.setRegion(region, animated: true)
       } else {
@@ -88,8 +89,21 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // MARK: Region Saving and Loading
    
+   func regionChangedForUserInteraction() -> Bool {
+      
+      let view = mapView.subviews[0]
+      
+      for recognizer in view.gestureRecognizers! {
+         if recognizer.state == .Began || recognizer.state == .Ended {
+            return true
+         }
+      }
+      return false
+   }
+   
    // Called by mapView regionDidChange()
    func saveCurrentMapRegion() {
+      print("save region")
       if let regionToBeSaved = savedRegion {
          regionToBeSaved.region = mapView.region
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
@@ -147,7 +161,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Saves current region to Core Data
    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+      if regionChangedForUserInteraction() {
          saveCurrentMapRegion()
+      }
    }
    
    func mapViewDidFinishLoadingMap(mapView: MKMapView) {
