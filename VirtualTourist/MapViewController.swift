@@ -23,6 +23,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    override func viewDidLoad() {
       super.viewDidLoad()
       
+      let delegate = UIApplication.sharedApplication().delegate as! AppDelegate
+      delegate.mapVC = self
+      
       navigationItem.rightBarButtonItem = editButtonItem()
       mapView.delegate = self
       
@@ -32,14 +35,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       getSavedRegion()
    }
    
-   // Use persisted map region otherwise use iOS default
-   override func viewWillLayoutSubviews() {
-      print("layout")
-      if let region = savedRegion?.region {
-         mapView.setRegion(region, animated: true)
-      } else {
-         savedRegion = SavedRegion(region: mapView.region, context: mainContext)
-      }
+   override func viewDidAppear(animated: Bool) {
+      super.viewDidAppear(animated)
+//      getSavedRegion()
    }
    
    // MARK: Main Functions
@@ -89,35 +87,31 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // MARK: Region Saving and Loading
    
-   func regionChangedForUserInteraction() -> Bool {
-      
-      let view = mapView.subviews[0]
-      
-      for recognizer in view.gestureRecognizers! {
-         if recognizer.state == .Began || recognizer.state == .Ended {
-            return true
-         }
-      }
-      return false
-   }
-   
-   // Called by mapView regionDidChange()
+   // Called by App Delegate Will Resign Active
    func saveCurrentMapRegion() {
-//      print("save region")
-      if let regionToBeSaved = savedRegion {
-         regionToBeSaved.region = mapView.region
+      print("save region")
+         savedRegion.region = mapView.region
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
-      }
    }
    
+   // 
    func getSavedRegion() { // From Core Data on App Load
       
       let fetchRequest = NSFetchRequest(entityName: "SavedRegion")
+      
       do {
          let savedRegions = try mainContext.executeFetchRequest(fetchRequest) as! [SavedRegion]
+         
          if !savedRegions.isEmpty {
             savedRegion = savedRegions[0]
+            mapView.region = savedRegion.region
+            print("loaded region")
+         } else {
+            savedRegion = SavedRegion(context: mainContext)
+            print("new blank region")
          }
+         CoreDataStackManager.sharedInstance.saveContext(mainContext)
+         
       } catch let error as NSError {
          print(error)
       }
@@ -157,13 +151,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       
       annotationView.draggable = true
       return annotationView
-   }
-   
-   // Saves current region to Core Data
-   func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-      if regionChangedForUserInteraction() {
-         saveCurrentMapRegion()
-      }
    }
    
    func mapViewDidFinishLoadingMap(mapView: MKMapView) {

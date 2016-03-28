@@ -11,6 +11,7 @@ import MapKit
 
 class SavedRegion: NSManagedObject {
    
+   // All initialized with 0.0 in xcdatamodel
    @NSManaged var latitude: Double
    @NSManaged var longitude: Double
    @NSManaged var spanLatitudeDelta: Double
@@ -35,10 +36,8 @@ class SavedRegion: NSManagedObject {
       super.init(entity: entity, insertIntoManagedObjectContext: context)
    }
    
-   init(region:  MKCoordinateRegion, context: NSManagedObjectContext) {
+   init(context: NSManagedObjectContext) {
       let entity = NSEntityDescription.entityForName("SavedRegion", inManagedObjectContext: context)
       super.init(entity: entity!, insertIntoManagedObjectContext: context)
-      
-      
    }
 }

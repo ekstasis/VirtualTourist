@@ -89,8 +89,6 @@ NSFetchedResultsControllerDelegate {
       
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       
-      print("PVC.viewWillPpear pin.availablePages = \(pin.availablePages)")
-      
       // Still downloading Flickr image URLs
       if frc.sections![0].numberOfObjects == 0 {
          removeRefreshButton.enabled = false
@@ -137,8 +135,6 @@ NSFetchedResultsControllerDelegate {
       }
       
       let photo = frc.objectAtIndexPath(indexPath) as! Photo
-      
-//      print("configureCell with Photo \(photo.objectID) at index \(indexPath.item)")
       
       // Do we have an image yet?  photo.filename is not nil if image successfully downloaded
       if let fileName = photo.fileName {
@@ -193,8 +189,6 @@ NSFetchedResultsControllerDelegate {
    }
    
    func newCollection() {
-      
-      print("##################################################")
       
       removeRefreshButton.enabled = false
       
@@ -277,7 +271,6 @@ NSFetchedResultsControllerDelegate {
       case .Insert:
          indexesToBeInserted.append(newIndexPath!)
          let photo = anObject as! Photo
-//         print(".Insert anObject: \(photo.objectID) at index \(newIndexPath!.item)")
       case .Delete:
          indexesToBeDeleted.append(indexPath!)
       case .Update:

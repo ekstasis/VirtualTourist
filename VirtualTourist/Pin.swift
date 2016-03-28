@@ -32,8 +32,6 @@ class Pin: NSManagedObject, MKAnnotation {
    // random page value for flickr API request
    var nextPage: Int {
       let pageLimit = FlickrClient.sharedInstance.maxPage // flickr photo limit / per_page
-      print("pageLimit = \(pageLimit)")
-      print("availPages = \(availablePages)")
       let maxPage = min(Int(availablePages), pageLimit)
       return Int(arc4random_uniform(UInt32(maxPage))) + 1
    }

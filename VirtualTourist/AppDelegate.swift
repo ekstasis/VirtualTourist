@@ -13,6 +13,12 @@ import CoreLocation
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    var window: UIWindow?
+   var window: UIWindow?
+   var mapVC: MapViewController! = MapViewController()
+   
+   func applicationWillResignActive(application: UIApplication) {
+      print("resign active")
+      mapVC.saveCurrentMapRegion()
+   }
 
 }
