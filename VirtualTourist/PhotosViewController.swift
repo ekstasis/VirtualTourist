@@ -85,6 +85,8 @@ NSFetchedResultsControllerDelegate {
    override func viewWillAppear(animated: Bool) {
       super.viewWillAppear(animated)
       
+      view.addSubview(activityIndicator)
+      
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       
       print("PVC.viewWillPpear pin.availablePages = \(pin.availablePages)")
@@ -111,7 +113,6 @@ NSFetchedResultsControllerDelegate {
    
    func startActivityIndicator() {
       activityIndicator.frame = activityIndicatorFrame
-      view.addSubview(activityIndicator)
       activityIndicator.startAnimating()
    }
    
@@ -203,8 +204,8 @@ NSFetchedResultsControllerDelegate {
       
       CoreDataStackManager.sharedInstance.saveContext(mainContext)
       
-      let checkthis = 1
-      activityIndicator.startAnimating()
+      startActivityIndicator()
+      
       FlickrClient.sharedInstance.fetchPhotos(pin)
       
       do {
@@ -228,9 +229,7 @@ NSFetchedResultsControllerDelegate {
       }
       alertController.addAction(action)
       
-      let needsDispathMainQueue = 1
       self.presentViewController(alertController, animated: true, completion: nil)
-//      self.removeRefreshButton.enabled = true
    }
    
    // MARK: Collection View Delegate & DataSource
