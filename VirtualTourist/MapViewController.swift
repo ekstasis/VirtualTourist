@@ -17,6 +17,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    var droppedPin: Pin!
    var savedRegion: SavedRegion!
    let mainContext = CoreDataStackManager.sharedInstance.managedObjectContext
+   var mapShouldLoad = true
    
    // MARK: View Controller Functions
    
@@ -32,12 +33,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: "dropPin:")
       longPressRecognizer.minimumPressDuration = 1.0
       mapView.addGestureRecognizer(longPressRecognizer)
-      getSavedRegion()
    }
    
    override func viewDidAppear(animated: Bool) {
       super.viewDidAppear(animated)
-//      getSavedRegion()
+      
+      // load region at this stage for correct map frame, but only do it once
+      if mapShouldLoad {
+         loadRegion()
+      }
+      mapShouldLoad = false
    }
    
    // MARK: Main Functions
@@ -89,13 +94,12 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    
    // Called by App Delegate Will Resign Active
    func saveCurrentMapRegion() {
-      print("save region")
-         savedRegion.region = mapView.region
-         CoreDataStackManager.sharedInstance.saveContext(mainContext)
+      savedRegion.region = mapView.region
+      CoreDataStackManager.sharedInstance.saveContext(mainContext)
    }
    
-   // 
-   func getSavedRegion() { // From Core Data on App Load
+   
+   func loadRegion() { // From Core Data on App Load
       
       let fetchRequest = NSFetchRequest(entityName: "SavedRegion")
       
@@ -105,10 +109,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          if !savedRegions.isEmpty {
             savedRegion = savedRegions[0]
             mapView.region = savedRegion.region
-            print("loaded region")
          } else {
             savedRegion = SavedRegion(context: mainContext)
-            print("new blank region")
          }
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
          
