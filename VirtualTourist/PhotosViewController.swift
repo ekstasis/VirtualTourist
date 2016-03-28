@@ -38,7 +38,8 @@ NSFetchedResultsControllerDelegate {
    lazy var frc: NSFetchedResultsController = {
       let fetchRequest = NSFetchRequest(entityName: "Photo")
       fetchRequest.predicate = NSPredicate(format: "pin == %@", self.pin!)
-      fetchRequest.sortDescriptors = []
+      let sortDesc = NSSortDescriptor.init(key: "imageURL", ascending: true)
+      fetchRequest.sortDescriptors = [sortDesc]
       let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.mainContext, sectionNameKeyPath: nil, cacheName: nil)
       frc.delegate = self
       return frc
