@@ -157,7 +157,6 @@ class FlickrClient {
          // Download API JSON image paths
          FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
             
-            let x = 1 // deal with error
             guard errorString == nil else {
                //            self.showAlert(errorString!)
                return

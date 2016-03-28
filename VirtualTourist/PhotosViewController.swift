@@ -270,7 +270,6 @@ NSFetchedResultsControllerDelegate {
       switch type {
       case .Insert:
          indexesToBeInserted.append(newIndexPath!)
-         let photo = anObject as! Photo
       case .Delete:
          indexesToBeDeleted.append(indexPath!)
       case .Update:

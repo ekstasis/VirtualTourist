@@ -27,7 +27,6 @@ class Photo: NSManagedObject {
       self.pin = pin
    }
    
-   
    override func prepareForDeletion() {
       
       let fileManager = NSFileManager.defaultManager()

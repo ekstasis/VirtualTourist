@@ -62,6 +62,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    // Pin creation, dragging, prefetching, and auto segue to album view
    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
       
+      guard !editing else {
+         return
+      }
+      
       let tapLocation = longPressRecognizer.locationInView(mapView)
       let mapCoordinate = mapView.convertPoint(tapLocation, toCoordinateFromView: mapView)
       
