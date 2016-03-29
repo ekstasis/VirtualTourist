@@ -122,7 +122,7 @@ class FlickrClient {
             let task = self.urlSession.dataTaskWithRequest(request) { data, response, error in
                
                guard error == nil else {
-                  //            completionHandler(imageData: nil, errorString: error!.localizedDescription)
+                  print(error)
                   return
                }
                
@@ -146,7 +146,7 @@ class FlickrClient {
       }
    }
    
-   func fetchPhotos(pin: Pin) {
+   func fetchPhotos(pin: Pin, completionHandler: (String?) -> Void) {
       
       let privateMOC = CoreDataStackManager.sharedInstance.createPrivateMOC()
       
@@ -158,9 +158,10 @@ class FlickrClient {
          FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
             
             guard errorString == nil else {
-               //            self.showAlert(errorString!)
+               completionHandler(errorString!)
                return
             }
+            
             // Create Photos from flickr API JSON image paths
             privateMOC.performBlockAndWait() {
                
@@ -171,8 +172,6 @@ class FlickrClient {
                      return Photo(imageURL: imageURL, pin: pin, context: privateMOC)
                   }
                }
-               //               print("getPaths created \(photos.count) photos")
-               
             }
             
             CoreDataStackManager.sharedInstance.saveContext(privateMOC)

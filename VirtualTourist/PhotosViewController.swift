@@ -144,7 +144,7 @@ NSFetchedResultsControllerDelegate {
          if let imageData = fileManager.contentsAtPath(filePath) {
             cell.imageView.image = UIImage(data: imageData)
          } else {
-            print("Error: No image file at \(filePath)")
+            NSLog("Error: No image file at \(filePath)")
          }
          
          cell.activityIndicator.stopAnimating()
@@ -200,7 +200,12 @@ NSFetchedResultsControllerDelegate {
       
       startActivityIndicator()
       
-      FlickrClient.sharedInstance.fetchPhotos(pin)
+      FlickrClient.sharedInstance.fetchPhotos(pin) { errorString in
+         guard errorString == nil else {
+            self.showAlert(errorString!)
+            return
+         }
+      }
       
       do {
          try frc.performFetch()
@@ -214,16 +219,9 @@ NSFetchedResultsControllerDelegate {
    }
    
    func showAlert(errorString: String) {
-      
-      self.activityIndicator.stopAnimating()
-      
-      let alertController = UIAlertController(title: "I'm Every So Sorry But . . .", message: errorString, preferredStyle: .Alert)
-      let action = UIAlertAction(title: "Forgive Me", style: .Default) { alert in
-         self.navigationController?.popViewControllerAnimated(true)
-      }
-      alertController.addAction(action)
-      
-      self.presentViewController(alertController, animated: true, completion: nil)
+         self.activityIndicator.stopAnimating()
+         let alert = Alert(controller: self, message: errorString)
+         alert.present()
    }
    
    // MARK: Collection View Delegate & DataSource

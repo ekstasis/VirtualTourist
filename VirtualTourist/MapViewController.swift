@@ -62,7 +62,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    // Pin creation, dragging, prefetching, and auto segue to album view
    func dropPin(longPressRecognizer: UILongPressGestureRecognizer) {
       
-      guard !editing else {
+      guard !editing else {  // don't create pins when you should be deleting them instead
          return
       }
       
@@ -80,9 +80,21 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          
       case .Ended:
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
-         FlickrClient.sharedInstance.fetchPhotos(droppedPin)
-         segueToAlbumView(droppedPin)
          
+         FlickrClient.sharedInstance.fetchPhotos(droppedPin) { errorString in
+            
+            if let error = errorString {
+               dispatch_async(dispatch_get_main_queue()) {
+                  self.showAlert(error)
+                  self.mapView.removeAnnotation(self.droppedPin)
+                  self.mainContext.deleteObject(self.droppedPin)
+                  CoreDataStackManager.sharedInstance.saveContext(self.mainContext)
+               }
+            } else {
+               self.segueToAlbumView(self.droppedPin)
+            }
+         }
+      
       default:
          return
       }
@@ -92,6 +104,11 @@ class MapViewController: UIViewController, MKMapViewDelegate {
       let photosVC = storyboard?.instantiateViewControllerWithIdentifier("Photos") as! PhotosViewController
       photosVC.pin = pin
       navigationController?.pushViewController(photosVC, animated: true)
+   }
+   
+   func showAlert(errorString: String) {
+      let alert = Alert(controller: self, message: errorString)
+      alert.present()
    }
    
    // MARK: Region Saving and Loading
