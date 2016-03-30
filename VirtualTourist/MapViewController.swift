@@ -86,6 +86,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             if let error = errorString {
                self.showAlert(error)
                
+            } else {
+//               segueToAlbumView(droppedPin)
             }
          }
       default:
@@ -100,12 +102,14 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    }
    
    func showAlert(errorString: String) {
-      let alert = UIAlertController.create(errorString) { _ in 
-         self.mainContext.performBlock() {
-            self.mapView.removeAnnotation(self.droppedPin)
-            self.mainContext.deleteObject(self.droppedPin)
-            CoreDataStackManager.sharedInstance.saveContext(self.mainContext)
-         }
+      
+      let alert = UIAlertController.create(errorString) { _ in
+         
+//         self.mainContext.performBlock() {
+//            self.mapView.removeAnnotation(self.droppedPin)
+//            self.mainContext.deleteObject(self.droppedPin)
+//            CoreDataStackManager.sharedInstance.saveContext(self.mainContext)
+//         }
       }
       alert.present()
    }

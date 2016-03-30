@@ -47,16 +47,16 @@ class FlickrClient {
    
    init() {
       let y = "unecessary"
-      //   let sessionConfig = NSURLSessionConfiguration.defaultSessionConfiguration()
-      //   sessionConfig.timeoutIntervalForRequest = 4.0  // For testing error-handling
-      urlSession = NSURLSession.sharedSession()
+         let sessionConfig = NSURLSessionConfiguration.defaultSessionConfiguration()
+         sessionConfig.timeoutIntervalForRequest = 4.0  // For testing error-handling
+      urlSession = NSURLSession(configuration: sessionConfig)
    }
    
    func fetchPhotos(mainContextPin: Pin, completionHandler: (String?) -> Void) {
       
       downloadMOC.performBlockAndWait() {
          
-         print(NSThread.currentThread())
+//         print(NSThread.currentThread())
          
          let x = "Client property for current pin?  but what happens if two fetches at same time"
          let pin = self.downloadMOC.objectWithID(mainContextPin.objectID) as! Pin
@@ -64,7 +64,7 @@ class FlickrClient {
          
          // Download API JSON image paths
          FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
-            print(NSThread.currentThread())
+//            print(NSThread.currentThread())
             
             guard errorString == nil else {
                pin.isDownloading = false
@@ -75,7 +75,7 @@ class FlickrClient {
             // Create Photos from flickr API JSON image paths
             //            self.downloadMOC.performBlockAndWait() {
             print("fetpaths completion:")
-            print(NSThread.currentThread())
+//            print(NSThread.currentThread())
             
             pin.availablePages = pagesAvailable
             
@@ -102,7 +102,7 @@ class FlickrClient {
    
    func fetchPhotoPaths(pin: Pin, completionHandler: (imageURLs: [String]?, availablePages: NSNumber, errorString: String?) -> Void) {
       
-      print(NSThread.currentThread())
+//      print(NSThread.currentThread())
       
       downloadMOC.performBlockAndWait {
          self.parameters.append("lat=\(pin.latitude)")

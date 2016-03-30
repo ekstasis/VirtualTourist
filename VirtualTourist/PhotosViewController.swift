@@ -108,7 +108,7 @@ NSFetchedResultsControllerDelegate {
          
          // Photos were never loaded (something had gone wrong at some point)
             if numPhotos == 0 {
-               newCollection()
+//               newCollection()
             }
          }
       }

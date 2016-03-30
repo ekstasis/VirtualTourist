@@ -73,8 +73,6 @@ class CoreDataStackManager {
    
    func saveContext(context: NSManagedObjectContext) {
       
-      print("save context \(++testCounter)")
-      
       context.performBlockAndWait() {
          if context.hasChanges {
             do {
