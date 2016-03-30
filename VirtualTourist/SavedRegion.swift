@@ -9,6 +9,7 @@
 import CoreData
 import MapKit
 
+// we are persisting map location in Core Data
 class SavedRegion: NSManagedObject {
    
    // All initialized with 0.0 in xcdatamodel

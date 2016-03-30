@@ -71,6 +71,7 @@ class CoreDataStackManager {
    
    // MARK: - Core Data Saving support
    
+   // Recursive save for child contexts
    func saveContext(context: NSManagedObjectContext) {
       
       context.performBlockAndWait() {

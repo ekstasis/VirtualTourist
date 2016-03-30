@@ -10,7 +10,6 @@ import UIKit
 import Foundation
 
 // Stolen from http://dativestudios.com/blog/2015/01/08/collection_view_layouts_on_wide_phones/
-
 class PhotoAlbumFlowLayout: UICollectionViewFlowLayout {
    
    var numberOfItemsPerRow : Int {
@@ -23,7 +22,6 @@ class PhotoAlbumFlowLayout: UICollectionViewFlowLayout {
    
    override func prepareLayout() {
       super.prepareLayout()
-      
       
       if let collectionView = self.collectionView {
          

@@ -89,8 +89,6 @@ NSFetchedResultsControllerDelegate {
       
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       
-      let numPhotos = frc.sections![0].numberOfObjects
-      
       if pin.numPagesForLocation == 0 { // There are no photos for the location
          noPhotoAlert()
          
@@ -98,12 +96,6 @@ NSFetchedResultsControllerDelegate {
          if pin.isDownloading {  // Still downloading Flickr image URLs
             removeRefreshButton.enabled = false
             startActivityIndicator()
-         }  else {
-         
-         // Photos were never loaded (something had gone wrong at some point)
-            if numPhotos == 0 {
-//               newCollection()
-            }
          }
       }
    }
