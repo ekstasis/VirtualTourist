@@ -86,9 +86,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             dispatch_async(dispatch_get_main_queue()) {
                if let error = errorString {
                   self.showAlert(error)
-                  
-               } else {
-                  self.segueToAlbumView(self.droppedPin)
                }
             }
          }
