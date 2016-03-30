@@ -10,9 +10,8 @@ import Foundation
 import UIKit
 import CoreData
 
-// NSNotification name for locations with no photos
-let NoPhotosNotification = "NoPhotosNotification"
-let AllFilesWrittenNotification = "AllFilesWrittenNotification"
+let NoPhotosNotification = "NoPhotosNotification" // Location has no associated Photos on Flickr
+let AllFilesWrittenNotification = "AllFilesWrittenNotification" // all images are downloaded and saved
 
 class FlickrClient {
    
@@ -33,38 +32,30 @@ class FlickrClient {
    ]
    
    static let sharedInstance = FlickrClient()
-   let urlSession: NSURLSession
+   let urlSession = NSURLSession.sharedSession()
    
+   // shared MOC for all client tasks
    let downloadMOC = CoreDataStackManager.sharedInstance.createPrivateMOC()
    
-   var maxPage: Int {
+   // based on Flickr photo download limit above
+   var pageLimit: Int {
       return photoLimit / photosPerPage
    }
    
+   // tracks if we're done downloading and saving
    var numImagesToDownload = 0
    
    // MARK: Functions
-   
-   init() {
-      let y = "unecessary"
-         let sessionConfig = NSURLSessionConfiguration.defaultSessionConfiguration()
-         sessionConfig.timeoutIntervalForRequest = 4.0  // For testing error-handling
-      urlSession = NSURLSession(configuration: sessionConfig)
-   }
    
    func fetchPhotos(mainContextPin: Pin, completionHandler: (String?) -> Void) {
       
       downloadMOC.performBlockAndWait() {
          
-//         print(NSThread.currentThread())
-         
-         let x = "Client property for current pin?  but what happens if two fetches at same time"
          let pin = self.downloadMOC.objectWithID(mainContextPin.objectID) as! Pin
          pin.isDownloading = true
          
          // Download API JSON image paths
-         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, pagesAvailable, errorString in
-//            print(NSThread.currentThread())
+         FlickrClient.sharedInstance.fetchPhotoPaths(pin) { imageURLs, numPagesForLocation, errorString in
             
             guard errorString == nil else {
                pin.isDownloading = false
@@ -72,13 +63,9 @@ class FlickrClient {
                return
             }
             
+            pin.numPagesForLocation = numPagesForLocation
+            
             // Create Photos from flickr API JSON image paths
-            //            self.downloadMOC.performBlockAndWait() {
-            print("fetpaths completion:")
-//            print(NSThread.currentThread())
-            
-            pin.availablePages = pagesAvailable
-            
             if let images = imageURLs {
                let _ = images.map { (imageURL) -> Photo in
                   return Photo(imageURL: imageURL, pin: pin, context: self.downloadMOC)
@@ -94,8 +81,7 @@ class FlickrClient {
                CoreDataStackManager.sharedInstance.saveContext(self.downloadMOC)
             }
             
-            //            }
-            
+            completionHandler(nil)
          }
       }
    }

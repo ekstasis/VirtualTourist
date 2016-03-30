@@ -91,13 +91,7 @@ NSFetchedResultsControllerDelegate {
       
       let numPhotos = frc.sections![0].numberOfObjects
       
-      print("***")
-      print("pin downloading \(pin.isDownloading)")
-      print("avail pages \(pin.availablePages)")
-      print("numPhoteos \(numPhotos)")
-      
-      
-      if pin.availablePages == 0 { // There are no photos for the location
+      if pin.numPagesForLocation == 0 { // There are no photos for the location
          noPhotoAlert()
          
       } else {

@@ -83,11 +83,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          
          FlickrClient.sharedInstance.fetchPhotos(droppedPin) { errorString in
             
-            if let error = errorString {
-               self.showAlert(error)
-               
-            } else {
-//               segueToAlbumView(droppedPin)
+            dispatch_async(dispatch_get_main_queue()) {
+               if let error = errorString {
+                  self.showAlert(error)
+                  
+               } else {
+                  self.segueToAlbumView(self.droppedPin)
+               }
             }
          }
       default:
