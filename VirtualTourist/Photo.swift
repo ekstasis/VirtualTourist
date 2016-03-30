@@ -28,6 +28,7 @@ class Photo: NSManagedObject {
    }
    
    override func prepareForDeletion() {
+      super.prepareForDeletion()
       
       let fileManager = NSFileManager.defaultManager()
       let directory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory

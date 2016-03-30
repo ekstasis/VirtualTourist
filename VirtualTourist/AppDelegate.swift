@@ -17,6 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
    var mapVC: MapViewController! = MapViewController()
    
    func applicationWillResignActive(application: UIApplication) {
+      print("resign active")
       mapVC.saveCurrentMapRegion()
    }
 

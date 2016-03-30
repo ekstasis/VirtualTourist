@@ -89,15 +89,28 @@ NSFetchedResultsControllerDelegate {
       
       removeRefreshButton.setTitle("New Collection", forState: .Normal)
       
-      // Still downloading Flickr image URLs
-      if frc.sections![0].numberOfObjects == 0 {
-         removeRefreshButton.enabled = false
-         startActivityIndicator()
-         
-      }
+      let numPhotos = frc.sections![0].numberOfObjects
       
-      if pin.availablePages == 0 {
+      print("***")
+      print("pin downloading \(pin.isDownloading)")
+      print("avail pages \(pin.availablePages)")
+      print("numPhoteos \(numPhotos)")
+      
+      
+      if pin.availablePages == 0 { // There are no photos for the location
          noPhotoAlert()
+         
+      } else {
+         if pin.isDownloading {  // Still downloading Flickr image URLs
+            removeRefreshButton.enabled = false
+            startActivityIndicator()
+         }  else {
+         
+         // Photos were never loaded (something had gone wrong at some point)
+            if numPhotos == 0 {
+               newCollection()
+            }
+         }
       }
    }
    
@@ -219,9 +232,15 @@ NSFetchedResultsControllerDelegate {
    }
    
    func showAlert(errorString: String) {
-         self.activityIndicator.stopAnimating()
-         let alert = Alert(controller: self, message: errorString)
-         alert.present()
+      let actionHandler: (UIAlertAction) -> Void = { UIAlertAction in
+         dispatch_async(dispatch_get_main_queue()) {
+            self.activityIndicator.stopAnimating()
+            self.removeRefreshButton.enabled = true
+         }
+      }
+      let alert = UIAlertController.create(errorString, actionHandler: actionHandler)
+      
+      alert.present()
    }
    
    // MARK: Collection View Delegate & DataSource

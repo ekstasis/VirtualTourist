@@ -16,6 +16,7 @@ class Pin: NSManagedObject, MKAnnotation {
    @NSManaged var longitude: Double
    @NSManaged var photos: [Photo]
    @NSManaged var availablePages: NSNumber   // updated with each flickr JSON request
+   @NSManaged var isDownloading: Bool
    
    var coordinate: CLLocationCoordinate2D {
       get {
@@ -51,5 +52,9 @@ class Pin: NSManagedObject, MKAnnotation {
       availablePages = 1 // updates on subsequent calls to flickr API
    }
    
+   override func awakeFromFetch() {
+      super.awakeFromFetch()
+      isDownloading = false
+   }
  
 }

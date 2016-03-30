@@ -84,17 +84,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
          FlickrClient.sharedInstance.fetchPhotos(droppedPin) { errorString in
             
             if let error = errorString {
-               dispatch_async(dispatch_get_main_queue()) {
-                  self.showAlert(error)
-                  self.mapView.removeAnnotation(self.droppedPin)
-                  self.mainContext.deleteObject(self.droppedPin)
-                  CoreDataStackManager.sharedInstance.saveContext(self.mainContext)
-               }
-            } else {
-               self.segueToAlbumView(self.droppedPin)
+               self.showAlert(error)
+               
             }
          }
-      
       default:
          return
       }
@@ -107,7 +100,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
    }
    
    func showAlert(errorString: String) {
-      let alert = Alert(controller: self, message: errorString)
+      let alert = UIAlertController.create(errorString) { _ in 
+         self.mainContext.performBlock() {
+            self.mapView.removeAnnotation(self.droppedPin)
+            self.mainContext.deleteObject(self.droppedPin)
+            CoreDataStackManager.sharedInstance.saveContext(self.mainContext)
+         }
+      }
       alert.present()
    }
    
@@ -132,6 +131,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             mapView.region = savedRegion.region
          } else {
             savedRegion = SavedRegion(context: mainContext)
+            savedRegion.region = mapView.region
          }
          CoreDataStackManager.sharedInstance.saveContext(mainContext)
          

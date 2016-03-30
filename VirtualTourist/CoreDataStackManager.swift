@@ -12,6 +12,9 @@ import CoreData
 
 private let SQLITE_FILE_NAME = "virtual_tourist.sqlite"
 
+var testCounter = 0
+var x = "delete me"
+
 /*
 *  Adapted from Udacity examples
 */
@@ -69,6 +72,8 @@ class CoreDataStackManager {
    // MARK: - Core Data Saving support
    
    func saveContext(context: NSManagedObjectContext) {
+      
+      print("save context \(++testCounter)")
       
       context.performBlockAndWait() {
          if context.hasChanges {

@@ -7,6 +7,7 @@
     </entity>
     <entity name="Pin" representedClassName=".Pin" syncable="YES">
         <attribute name="availablePages" attributeType="Integer 64" syncable="YES"/>
+        <attribute name="isDownloading" transient="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="latitude" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
         <attribute name="longitude" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
@@ -19,7 +20,7 @@
     </entity>
     <elements>
         <element name="Photo" positionX="-54" positionY="0" width="128" height="90"/>
-        <element name="Pin" positionX="-63" positionY="-18" width="128" height="105"/>
+        <element name="Pin" positionX="-63" positionY="-18" width="128" height="120"/>
         <element name="SavedRegion" positionX="-54" positionY="18" width="128" height="105"/>
     </elements>
 </model>
