@@ -65,87 +65,77 @@ class FlickrClient {
             
             pin.numPagesForLocation = numPagesForLocation
             
-            // Create Photos from flickr API JSON image paths
+            // Create Photos from flickr URLs and start downloading
             if let images = imageURLs {
                let _ = images.map { (imageURL) -> Photo in
                   return Photo(imageURL: imageURL, pin: pin, context: self.downloadMOC)
                }
-               
                CoreDataStackManager.sharedInstance.saveContext(self.downloadMOC)
-               
-               // Downlaod images with client
                FlickrClient.sharedInstance.downloadImages(pin)
                
-            } else {
+            } else { // no photos for location, notification was sent in main function
                pin.isDownloading = false // No photos for this location
                CoreDataStackManager.sharedInstance.saveContext(self.downloadMOC)
             }
-            
             completionHandler(nil)
          }
-      }
+      } // end performBlockAndWait
    }
    
    func fetchPhotoPaths(pin: Pin, completionHandler: (imageURLs: [String]?, availablePages: NSNumber, errorString: String?) -> Void) {
-      
-//      print(NSThread.currentThread())
       
       downloadMOC.performBlockAndWait {
          self.parameters.append("lat=\(pin.latitude)")
          self.parameters.append("lon=\(pin.longitude)")
          self.parameters.append("per_page=\(self.photosPerPage)")
          self.parameters.append("page=\(pin.nextPage)")
+      } // end performBlockAndWait
+      
+      let urlString = self.baseURL + "?" + self.parameters.joinWithSeparator("&")
+      let request = NSMutableURLRequest(URL: NSURL(string: urlString)!)
+      
+      let task = self.urlSession.dataTaskWithRequest(request) { data, response, error in
          
-         // API arguments from parameters property above
-         let urlString = self.baseURL + "?" + self.parameters.joinWithSeparator("&")
-         let request = NSMutableURLRequest(URL: NSURL(string: urlString)!)
-         
-         let task = self.urlSession.dataTaskWithRequest(request) { data, response, error in
-            self.downloadMOC.performBlockAndWait {
-               guard error == nil else {
-                  completionHandler(imageURLs: nil, availablePages: 0, errorString: error!.localizedDescription)
-                  return
-               }
-               
-               var json = NSDictionary()
-               
-               do {
-                  json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
-               } catch let error as NSError {
-                  completionHandler(imageURLs: nil, availablePages: 0, errorString: error.localizedDescription)
-               }
-               
-               let photosDict = json["photos"] as! [String : AnyObject]
-               let photoArray = photosDict["photo"] as! [[String: AnyObject]]
-               let numPages = photosDict["pages"] as! NSNumber
-               
-               guard !photoArray.isEmpty else {
-                  pin.isDownloading = false
-                  let notificationCenter = NSNotificationCenter.defaultCenter()
-                  dispatch_async(dispatch_get_main_queue()) {
-                     notificationCenter.postNotificationName(NoPhotosNotification, object: nil)
-                  }
-                  completionHandler(imageURLs: nil, availablePages: 0, errorString: nil)
-                  return
-               }
-               
-               // Generate flickr photo URLs from API JSON
-               let imageURLs = photoArray.map { (dict) -> String in
-                  let farm = dict["farm"] as! Int
-                  let id = dict["id"] as! String
-                  let secret = dict["secret"] as! String
-                  let server = dict["server"] as! String
-                  return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
-               }
-               
-               print("imageUrls: \(imageURLs.count)")
-               
-               completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
+         self.downloadMOC.performBlockAndWait {
+            
+            guard error == nil else {
+               completionHandler(imageURLs: nil, availablePages: 0, errorString: error!.localizedDescription)
+               return
             }
             
+            var json = NSDictionary()
+            do {
+               json = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments) as! NSDictionary
+            } catch let error as NSError {
+               completionHandler(imageURLs: nil, availablePages: 0, errorString: error.localizedDescription)
+            }
+            
+            let photosDict = json["photos"] as! [String : AnyObject]
+            let photoArray = photosDict["photo"] as! [[String: AnyObject]]
+            let numPages = photosDict["pages"] as! NSNumber
+            
+            guard !photoArray.isEmpty else {
+               pin.isDownloading = false
+               dispatch_async(dispatch_get_main_queue()) {
+                  NSNotificationCenter.defaultCenter().postNotificationName(NoPhotosNotification, object: nil)
+               }
+               completionHandler(imageURLs: nil, availablePages: 0, errorString: nil)
+               return
+            }
+            
+            // Generate flickr photo URLs from API JSON
+            let imageURLs = photoArray.map { (dict) -> String in
+               let farm = dict["farm"] as! Int
+               let id = dict["id"] as! String
+               let secret = dict["secret"] as! String
+               let server = dict["server"] as! String
+               return("https://farm\(farm).staticflickr.com/\(server)/\(id)_\(secret)_q.jpg")
+            }
+            
+            completionHandler(imageURLs: imageURLs, availablePages: numPages, errorString: nil)
          }
-         task.resume()
-      }
+      } // end performBlockAndWait
+      task.resume()
    }
    
    func downloadImages(pin: Pin) {
@@ -154,54 +144,49 @@ class FlickrClient {
          
          self.numImagesToDownload = pin.photos.count
          
-         guard !pin.photos.isEmpty else {
-            pin.isDownloading = false
-            print("pin photos empty??")
-            return
-         }
-         
          for photo in pin.photos {
             
-            let url = NSURL(string: photo.imageURL)
-            let request = NSURLRequest(URL: url!)
+            let imageURL = NSURL(string: photo.imageURL)
+            let request = NSURLRequest(URL: imageURL!)
             
             let task = self.urlSession.dataTaskWithRequest(request) { data, response, error in
                
-               self.downloadMOC.performBlockAndWait {
+               
+               guard error == nil else {  // fail quietly for individual image download error
+                  return
+               }
+               
+               let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
+               let fileName = imageURL!.lastPathComponent!
+               let filePath = fileDirectory.URLByAppendingPathComponent(fileName)
+               
+               let image = UIImage(data: data!)!
+               let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
+               
+               if imageToBeSaved.writeToFile(filePath.path!, atomically: true) {
                   
-                  guard error == nil else {
-                     print(error)
-                     return
+                  self.downloadMOC.performBlockAndWait {
+                     photo.fileName = fileName
+                     CoreDataStackManager.sharedInstance.saveContext(self.downloadMOC)
                   }
                   
-                  let fileName = url!.lastPathComponent!
-                  let fileDirectory = CoreDataStackManager.sharedInstance.applicationDocumentsDirectory
-                  let filePath = fileDirectory.URLByAppendingPathComponent(fileName)
+                  self.numImagesToDownload--
                   
-                  let image = UIImage(data: data!)!
-                  let imageToBeSaved = UIImageJPEGRepresentation(image, 1.0)!
-                  
-                  if imageToBeSaved.writeToFile(filePath.path!, atomically: true) {
+                  // Alerts Album View if downloads are complete
+                  if self.numImagesToDownload == 0 {
+                     dispatch_async(dispatch_get_main_queue()) {
+                        NSNotificationCenter.defaultCenter().postNotificationName(AllFilesWrittenNotification, object: nil)
+                     }
                      
-//                     self.downloadMOC.performBlockAndWait() {
-                        photo.fileName = fileName
-                        CoreDataStackManager.sharedInstance.saveContext(self.downloadMOC)
-//                     }
-                     
-                     // Alerts Album View that downloads are complete
-                     self.numImagesToDownload = self.numImagesToDownload - 1
-                     if self.numImagesToDownload == 0 {
+                     self.downloadMOC.performBlockAndWait() {
                         pin.isDownloading = false
                         CoreDataStackManager.sharedInstance.saveContext(self.downloadMOC)
-                        dispatch_async(dispatch_get_main_queue()) {
-                           NSNotificationCenter.defaultCenter().postNotificationName(AllFilesWrittenNotification, object: nil)
-                        }
                      }
                   }
                }
             }
             task.resume()
-         }
-      }
+         } // end for loop
+      } // end performBlockAndWait
    }
 }
